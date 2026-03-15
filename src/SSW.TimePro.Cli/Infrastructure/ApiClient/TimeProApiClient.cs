@@ -35,6 +35,12 @@ public interface ITimeProApiClient
     Task<List<TimesheetItem>> RefreshSuggestedTimesheetsAsync(string employeeId, DateOnly date, CancellationToken ct = default);
     Task<TimesheetResponse?> AcceptSuggestedTimesheetAsync(int suggestedId, string? location, string? notes, decimal? newSellPrice, CancellationToken ct = default);
     Task DeleteSuggestedTimesheetAsync(int suggestedId, CancellationToken ct = default);
+    Task<LeaveListResponse?> GetLeaveAsync(string filter, int pageNumber, int pageSize, CancellationToken ct = default);
+    Task<List<LeaveTypeInfo>> GetLeaveTypesAsync(CancellationToken ct = default);
+    Task CreateLeaveAsync(CreateLeaveRequest request, CancellationToken ct = default);
+    Task UpdateLeaveAsync(UpdateLeaveRequest request, CancellationToken ct = default);
+    Task CancelLeaveAsync(string leaveId, CancelLeaveRequest request, CancellationToken ct = default);
+    Task<byte[]> ExportTimesheetsCsvAsync(DateOnly? startDate, DateOnly? endDate, CancellationToken ct = default);
 }
 
 /// <summary>
@@ -177,6 +183,55 @@ public class TimeProApiClient : ITimeProApiClient
         await DeleteAsync($"/api/Timesheets/DeleteSuggestedTimesheet/{suggestedId}", ct);
     }
 
+    // ───────────────────────── Leave ─────────────────────────
+
+    public async Task<LeaveListResponse?> GetLeaveAsync(
+        string filter, int pageNumber, int pageSize, CancellationToken ct = default)
+    {
+        var url = $"/api/leave/?pageNumber={pageNumber}&pageSize={pageSize}&leaveFilter={Uri.EscapeDataString(filter)}";
+        return await GetAsync<LeaveListResponse>(url, ct);
+    }
+
+    public async Task<List<LeaveTypeInfo>> GetLeaveTypesAsync(CancellationToken ct = default)
+    {
+        return await GetAsync<List<LeaveTypeInfo>>("/api/leave/types", ct) ?? [];
+    }
+
+    public async Task CreateLeaveAsync(CreateLeaveRequest request, CancellationToken ct = default)
+    {
+        await PostAsync<object>("/api/leave/", request, ct);
+    }
+
+    public async Task UpdateLeaveAsync(UpdateLeaveRequest request, CancellationToken ct = default)
+    {
+        await PutAsync("/api/leave/", request, ct);
+    }
+
+    public async Task CancelLeaveAsync(string leaveId, CancelLeaveRequest request, CancellationToken ct = default)
+    {
+        await PutAsync($"/api/leave/{Uri.EscapeDataString(leaveId)}/cancel", request, ct);
+    }
+
+    // ───────────────────────── Export ─────────────────────────
+
+    public async Task<byte[]> ExportTimesheetsCsvAsync(
+        DateOnly? startDate, DateOnly? endDate, CancellationToken ct = default)
+    {
+        var url = "/Export/ExportTimesheetsToCSV";
+        var query = new List<string>();
+        if (startDate.HasValue) query.Add($"startDate={startDate.Value:yyyy-MM-dd}");
+        if (endDate.HasValue) query.Add($"endDate={endDate.Value:yyyy-MM-dd}");
+        if (query.Count > 0) url += "?" + string.Join("&", query);
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
+        ConfigureRequest(request);
+
+        using var response = await _http.SendAsync(request, ct);
+        await EnsureSuccessAsync(response, ct);
+
+        return await response.Content.ReadAsByteArrayAsync(ct);
+    }
+
     // ───────────────────────── HTTP Helpers ─────────────────────────
 
     private void ConfigureRequest(HttpRequestMessage request)
@@ -215,6 +270,18 @@ public class TimeProApiClient : ITimeProApiClient
         await EnsureSuccessAsync(response, ct);
 
         return await response.Content.ReadFromJsonAsync<T>(JsonOptions, ct);
+    }
+
+    private async Task PutAsync(string relativeUrl, object body, CancellationToken ct)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Put, relativeUrl)
+        {
+            Content = JsonContent.Create(body, options: JsonOptions)
+        };
+        ConfigureRequest(request);
+
+        using var response = await _http.SendAsync(request, ct);
+        await EnsureSuccessAsync(response, ct);
     }
 
     private async Task DeleteAsync(string relativeUrl, CancellationToken ct)

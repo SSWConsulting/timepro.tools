@@ -14,6 +14,17 @@ public interface IConfigService
     void DeleteTenantConfig(string tenantId);
     TenantConfig? LoadActiveTenantConfig();
     List<TenantConfig> ListTenants();
+    List<RepoMappingEntry> LoadRepoMappings();
+    void SaveRepoMappings(List<RepoMappingEntry> mappings);
+}
+
+public class RepoMappingEntry
+{
+    public string PathPattern { get; set; } = string.Empty;
+    public string ClientId { get; set; } = string.Empty;
+    public string ProjectId { get; set; } = string.Empty;
+    public string? ProjectName { get; set; }
+    public string? CategoryId { get; set; }
 }
 
 public class ConfigService : IConfigService
@@ -121,5 +132,23 @@ public class ConfigService : IConfigService
         }
 
         return tenants;
+    }
+
+    private string RepoMappingsFile => Path.Combine(_basePath, "repo-mappings.json");
+
+    public List<RepoMappingEntry> LoadRepoMappings()
+    {
+        if (!File.Exists(RepoMappingsFile))
+            return [];
+
+        var json = File.ReadAllText(RepoMappingsFile);
+        return JsonSerializer.Deserialize<List<RepoMappingEntry>>(json, JsonOptions) ?? [];
+    }
+
+    public void SaveRepoMappings(List<RepoMappingEntry> mappings)
+    {
+        EnsureDirectories();
+        var json = JsonSerializer.Serialize(mappings, JsonOptions);
+        File.WriteAllText(RepoMappingsFile, json);
     }
 }
