@@ -12,6 +12,15 @@ using Spectre.Console.Cli;
 using ClientSearch = SSW.TimePro.Cli.Features.Clients.SearchCommand;
 using ProjectList = SSW.TimePro.Cli.Features.Projects.ListCommand;
 using RateGet = SSW.TimePro.Cli.Features.Rates.GetCommand;
+using LeaveList = SSW.TimePro.Cli.Features.Leave.ListCommand;
+using LeaveCreate = SSW.TimePro.Cli.Features.Leave.CreateCommand;
+using LeaveCancel = SSW.TimePro.Cli.Features.Leave.CancelCommand;
+using LocationInfo = SSW.TimePro.Cli.Features.Location.InfoCommand;
+using LocationSet = SSW.TimePro.Cli.Features.Location.SetCommand;
+using MapSet = SSW.TimePro.Cli.Features.RepoMap.SetCommand;
+using MapList = SSW.TimePro.Cli.Features.RepoMap.ListCommand;
+using MapRemove = SSW.TimePro.Cli.Features.RepoMap.RemoveCommand;
+using SkillsCreate = SSW.TimePro.Cli.Features.Skills.CreateCommand;
 
 // Configure DI
 var services = new ServiceCollection();
@@ -62,6 +71,8 @@ app.Configure(config =>
             .WithDescription("View suggested timesheets");
         branch.AddCommand<AcceptCommand>("accept")
             .WithDescription("Accept a suggested timesheet");
+        branch.AddCommand<ExportCommand>("export")
+            .WithDescription("Export timesheets to CSV");
     }
 
     // Timesheets (with alias)
@@ -90,6 +101,29 @@ app.Configure(config =>
         bk.SetDescription("CRM bookings (alias)");
         bk.AddCommand<ListCommand>("list")
             .WithDescription("List CRM bookings");
+    });
+
+    // Leave (with alias)
+    void RegisterLeaveCommands(IConfigurator<CommandSettings> branch)
+    {
+        branch.AddCommand<LeaveList>("list")
+            .WithDescription("List leave entries");
+        branch.AddCommand<LeaveCreate>("create")
+            .WithDescription("Create a leave request");
+        branch.AddCommand<LeaveCancel>("cancel")
+            .WithDescription("Cancel a leave request");
+    }
+
+    config.AddBranch("leave", lv =>
+    {
+        lv.SetDescription("Manage leave/EasyLeave");
+        RegisterLeaveCommands(lv);
+    });
+
+    config.AddBranch("lv", lv =>
+    {
+        lv.SetDescription("Manage leave (alias)");
+        RegisterLeaveCommands(lv);
     });
 
     // Client (with alias)
@@ -128,6 +162,45 @@ app.Configure(config =>
         rate.SetDescription("Rate information");
         rate.AddCommand<RateGet>("get")
             .WithDescription("Get client rate for current employee");
+    });
+
+    // Location (with alias)
+    config.AddBranch("location", loc =>
+    {
+        loc.SetDescription("Location and WFH settings");
+        loc.AddCommand<LocationInfo>("info")
+            .WithDescription("Show location defaults");
+        loc.AddCommand<LocationSet>("set")
+            .WithDescription("Set WFH day defaults");
+    });
+
+    config.AddBranch("loc", loc =>
+    {
+        loc.SetDescription("Location settings (alias)");
+        loc.AddCommand<LocationInfo>("info")
+            .WithDescription("Show location defaults");
+        loc.AddCommand<LocationSet>("set")
+            .WithDescription("Set WFH day defaults");
+    });
+
+    // Repo mapping
+    config.AddBranch("map", map =>
+    {
+        map.SetDescription("Repository-to-project mappings");
+        map.AddCommand<MapSet>("set")
+            .WithDescription("Map a repo path to a client/project");
+        map.AddCommand<MapList>("list")
+            .WithDescription("List repo mappings");
+        map.AddCommand<MapRemove>("remove")
+            .WithDescription("Remove a repo mapping");
+    });
+
+    // Skills
+    config.AddBranch("skills", skills =>
+    {
+        skills.SetDescription("Agent skill file management");
+        skills.AddCommand<SkillsCreate>("create")
+            .WithDescription("Generate agent skill files");
     });
 
     // User
