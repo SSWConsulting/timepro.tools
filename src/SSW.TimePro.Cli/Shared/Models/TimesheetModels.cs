@@ -37,28 +37,59 @@ public class TimesheetItem
 
 /// <summary>
 /// Request body for POST /api/Timesheets/SaveTimesheet (create and update).
+/// Property names use [JsonPropertyName] to match the exact API contract.
 /// </summary>
 public class TimesheetRequest
 {
+    [System.Text.Json.Serialization.JsonPropertyName("empID")]
     public string EmpId { get; set; } = string.Empty;
+
+    [System.Text.Json.Serialization.JsonPropertyName("clientID")]
     public string ClientId { get; set; } = string.Empty;
+
+    [System.Text.Json.Serialization.JsonPropertyName("projectID")]
     public string ProjectId { get; set; } = string.Empty;
+
+    [System.Text.Json.Serialization.JsonPropertyName("iterationID")]
     public int? IterationId { get; set; }
+
+    [System.Text.Json.Serialization.JsonPropertyName("categoryID")]
     public string? CategoryId { get; set; }
+
+    [System.Text.Json.Serialization.JsonPropertyName("locationID")]
     public string? LocationId { get; set; }
+
+    [System.Text.Json.Serialization.JsonPropertyName("dateCreated")]
     public string? DateCreated { get; set; }
+
+    [System.Text.Json.Serialization.JsonPropertyName("timeStart")]
     public string? TimeStart { get; set; }
+
+    [System.Text.Json.Serialization.JsonPropertyName("timeEnd")]
     public string? TimeEnd { get; set; }
+
+    [System.Text.Json.Serialization.JsonPropertyName("timeLess")]
     public decimal? TimeLess { get; set; }
+
+    [System.Text.Json.Serialization.JsonPropertyName("Notes")]
     public string? Note { get; set; }
+
+    [System.Text.Json.Serialization.JsonPropertyName("billableID")]
     public string? BillableId { get; set; }
+
+    [System.Text.Json.Serialization.JsonPropertyName("sellPrice")]
     public decimal? SellPrice { get; set; }
+
+    [System.Text.Json.Serialization.JsonPropertyName("isOverridden")]
     public bool IsOverridden { get; set; }
+
+    [System.Text.Json.Serialization.JsonPropertyName("isOverwriteRate")]
     public bool IsOverwriteRate { get; set; }
 
     /// <summary>
     /// Only set for update operations.
     /// </summary>
+    [System.Text.Json.Serialization.JsonPropertyName("timeID")]
     public int? TimeId { get; set; }
 }
 

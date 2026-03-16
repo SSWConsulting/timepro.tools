@@ -170,15 +170,16 @@ public class CreateCommand : AsyncCommand<CreateCommand.Settings>
 
             if (settings.Json)
             {
-                OutputHelper.WriteJson(response);
+                OutputHelper.WriteJson(response ?? new TimesheetResponse { Success = true });
             }
-            else if (response?.Success == true)
+            else if (response is null || response.Success)
             {
-                OutputHelper.WriteSuccess($"Timesheet created (ID: {response.TimesheetId})");
+                // API returns empty body on success
+                OutputHelper.WriteSuccess($"Timesheet created{(response?.TimesheetId is not null ? $" (ID: {response.TimesheetId})" : "")}");
             }
             else
             {
-                OutputHelper.WriteError(response?.Message ?? "Failed to create timesheet");
+                OutputHelper.WriteError(response.Message ?? "Failed to create timesheet");
                 return 1;
             }
 

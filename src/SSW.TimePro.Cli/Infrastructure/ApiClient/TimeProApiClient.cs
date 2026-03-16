@@ -56,10 +56,23 @@ public class TimeProApiClient : ITimeProApiClient
     private readonly HttpClient _http;
     private readonly ITenantProvider _tenantProvider;
 
-    private static readonly JsonSerializerOptions JsonOptions = new()
+    /// <summary>
+    /// Options for deserializing API responses (case-insensitive).
+    /// </summary>
+    private static readonly JsonSerializerOptions ReadJsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         PropertyNameCaseInsensitive = true
+    };
+
+    /// <summary>
+    /// Options for serializing request bodies. No naming policy so that
+    /// [JsonPropertyName] attributes are respected (e.g. "empID", "clientID").
+    /// </summary>
+    private static readonly JsonSerializerOptions WriteJsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
     };
 
     public TimeProApiClient(HttpClient http, ITenantProvider tenantProvider)
@@ -285,28 +298,33 @@ public class TimeProApiClient : ITimeProApiClient
         using var response = await _http.SendAsync(request, ct);
         await EnsureSuccessAsync(response, ct);
 
-        return await response.Content.ReadFromJsonAsync<T>(JsonOptions, ct);
+        return await response.Content.ReadFromJsonAsync<T>(ReadJsonOptions, ct);
     }
 
     private async Task<T?> PostAsync<T>(string relativeUrl, object body, CancellationToken ct)
     {
         using var request = new HttpRequestMessage(HttpMethod.Post, relativeUrl)
         {
-            Content = JsonContent.Create(body, options: JsonOptions)
+            Content = JsonContent.Create(body, options: WriteJsonOptions)
         };
         ConfigureRequest(request);
 
         using var response = await _http.SendAsync(request, ct);
         await EnsureSuccessAsync(response, ct);
 
-        return await response.Content.ReadFromJsonAsync<T>(JsonOptions, ct);
+        // Some endpoints return empty body on success (e.g. SaveTimesheet)
+        var content = await response.Content.ReadAsStringAsync(ct);
+        if (string.IsNullOrWhiteSpace(content))
+            return default;
+
+        return System.Text.Json.JsonSerializer.Deserialize<T>(content, ReadJsonOptions);
     }
 
     private async Task PutAsync(string relativeUrl, object body, CancellationToken ct)
     {
         using var request = new HttpRequestMessage(HttpMethod.Put, relativeUrl)
         {
-            Content = JsonContent.Create(body, options: JsonOptions)
+            Content = JsonContent.Create(body, options: WriteJsonOptions)
         };
         ConfigureRequest(request);
 
