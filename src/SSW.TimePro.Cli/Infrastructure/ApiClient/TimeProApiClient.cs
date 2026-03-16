@@ -42,6 +42,8 @@ public interface ITimeProApiClient
     Task CancelLeaveAsync(string leaveId, CancelLeaveRequest request, CancellationToken ct = default);
     Task<byte[]> ExportTimesheetsCsvAsync(DateOnly? startDate, DateOnly? endDate, CancellationToken ct = default);
     Task<List<BlogEntry>> GetBlogsAsync(bool includeFormerEmployees = false, CancellationToken ct = default);
+    Task<List<ProjectSummaryItem>> GetProjectsSummaryAsync(string employeeId, DateOnly startDate, DateOnly endDate, CancellationToken ct = default);
+    Task<List<IterationItem>> GetIterationsAsync(string projectId, CancellationToken ct = default);
 }
 
 /// <summary>
@@ -240,6 +242,24 @@ public class TimeProApiClient : ITimeProApiClient
     {
         var url = $"/api/Timesheets/PopulateBlogs?includePreviousEmployeeBlogs={includeFormerEmployees.ToString().ToLower()}";
         return await GetAsync<List<BlogEntry>>(url, ct) ?? [];
+    }
+
+    // ───────────────────────── Summary ─────────────────────────
+
+    public async Task<List<ProjectSummaryItem>> GetProjectsSummaryAsync(
+        string employeeId, DateOnly startDate, DateOnly endDate, CancellationToken ct = default)
+    {
+        var url = $"/api/Timesheets/GetProjectsSummary?employeeID={Uri.EscapeDataString(employeeId)}&startDate={startDate:yyyy-MM-dd}&endDate={endDate:yyyy-MM-dd}&currentDate={endDate:yyyy-MM-dd}";
+        return await GetAsync<List<ProjectSummaryItem>>(url, ct) ?? [];
+    }
+
+    // ───────────────────────── Iterations ─────────────────────────
+
+    public async Task<List<IterationItem>> GetIterationsAsync(
+        string projectId, CancellationToken ct = default)
+    {
+        var url = $"/api/ProjectIteration/GetIterationsForAddTimesheet?projectId={Uri.EscapeDataString(projectId)}";
+        return await GetAsync<List<IterationItem>>(url, ct) ?? [];
     }
 
     // ───────────────────────── HTTP Helpers ─────────────────────────
