@@ -23,6 +23,9 @@ using MapRemove = SSW.TimePro.Cli.Features.RepoMap.RemoveCommand;
 using MapDetect = SSW.TimePro.Cli.Features.RepoMap.DetectCommand;
 using SkillsCreate = SSW.TimePro.Cli.Features.Skills.CreateCommand;
 using BlogList = SSW.TimePro.Cli.Features.Blogs.ListCommand;
+using IterationList = SSW.TimePro.Cli.Features.Iterations.ListCommand;
+using SummaryCmd = SSW.TimePro.Cli.Features.Summary.SummaryCommand;
+using ReportCmd = SSW.TimePro.Cli.Features.Report.ReportCommand;
 using McpHost = SSW.TimePro.Cli.Features.Mcp.McpHostCommand;
 
 // Configure DI
@@ -76,6 +79,10 @@ app.Configure(config =>
             .WithDescription("Accept a suggested timesheet");
         branch.AddCommand<ExportCommand>("export")
             .WithDescription("Export timesheets to CSV");
+        branch.AddCommand<CheckCommand>("check")
+            .WithDescription("Validate timesheets for a week");
+        branch.AddCommand<CopyCommand>("copy")
+            .WithDescription("Copy timesheets from one day to another");
     }
 
     // Timesheets (with alias)
@@ -167,6 +174,21 @@ app.Configure(config =>
             .WithDescription("Get client rate for current employee");
     });
 
+    // Iteration (with alias)
+    config.AddBranch("iteration", it =>
+    {
+        it.SetDescription("Sprint/iteration operations");
+        it.AddCommand<IterationList>("list")
+            .WithDescription("List iterations for a project");
+    });
+
+    config.AddBranch("iter", it =>
+    {
+        it.SetDescription("Sprint/iteration (alias)");
+        it.AddCommand<IterationList>("list")
+            .WithDescription("List iterations for a project");
+    });
+
     // Location (with alias)
     config.AddBranch("location", loc =>
     {
@@ -223,6 +245,12 @@ app.Configure(config =>
         blog.AddCommand<BlogList>("list")
             .WithDescription("List latest blog posts");
     });
+
+    // Summary & Report (top-level)
+    config.AddCommand<SummaryCmd>("summary")
+        .WithDescription("Project hours breakdown for a period");
+    config.AddCommand<ReportCmd>("report")
+        .WithDescription("Monthly summary with billable % and WFH breakdown");
 
     // MCP
     config.AddCommand<McpHost>("mcp")
