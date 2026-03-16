@@ -41,6 +41,7 @@ public interface ITimeProApiClient
     Task UpdateLeaveAsync(UpdateLeaveRequest request, CancellationToken ct = default);
     Task CancelLeaveAsync(string leaveId, CancelLeaveRequest request, CancellationToken ct = default);
     Task<byte[]> ExportTimesheetsCsvAsync(DateOnly? startDate, DateOnly? endDate, CancellationToken ct = default);
+    Task<List<BlogEntry>> GetBlogsAsync(bool includeFormerEmployees = false, CancellationToken ct = default);
 }
 
 /// <summary>
@@ -230,6 +231,15 @@ public class TimeProApiClient : ITimeProApiClient
         await EnsureSuccessAsync(response, ct);
 
         return await response.Content.ReadAsByteArrayAsync(ct);
+    }
+
+    // ───────────────────────── Blogs ─────────────────────────
+
+    public async Task<List<BlogEntry>> GetBlogsAsync(
+        bool includeFormerEmployees = false, CancellationToken ct = default)
+    {
+        var url = $"/api/Timesheets/PopulateBlogs?includePreviousEmployeeBlogs={includeFormerEmployees.ToString().ToLower()}";
+        return await GetAsync<List<BlogEntry>>(url, ct) ?? [];
     }
 
     // ───────────────────────── HTTP Helpers ─────────────────────────

@@ -22,6 +22,7 @@ using MapList = SSW.TimePro.Cli.Features.RepoMap.ListCommand;
 using MapRemove = SSW.TimePro.Cli.Features.RepoMap.RemoveCommand;
 using MapDetect = SSW.TimePro.Cli.Features.RepoMap.DetectCommand;
 using SkillsCreate = SSW.TimePro.Cli.Features.Skills.CreateCommand;
+using BlogList = SSW.TimePro.Cli.Features.Blogs.ListCommand;
 using McpHost = SSW.TimePro.Cli.Features.Mcp.McpHostCommand;
 
 // Configure DI
@@ -213,6 +214,14 @@ app.Configure(config =>
         user.SetDescription("User information");
         user.AddCommand<MeCommand>("me")
             .WithDescription("Show current user info");
+    });
+
+    // Blog
+    config.AddBranch("blog", blog =>
+    {
+        blog.SetDescription("SSW employee blog posts");
+        blog.AddCommand<BlogList>("list")
+            .WithDescription("List latest blog posts");
     });
 
     // MCP
