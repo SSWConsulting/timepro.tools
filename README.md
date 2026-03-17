@@ -133,6 +133,7 @@ tp ts get 2026-03-12       # Specific date
 | `tp map detect` | Detect mapping for current directory |
 | `tp map list` | List all repo mappings |
 | `tp map remove PATH` | Remove a repo mapping |
+| `tp query` | Query timesheets across employees/projects (`--group-by`, `--json`) |
 | `tp skills create TARGET` | Generate agent skill files |
 | `tp user me` | Show current user info |
 | `tp blog list` | Latest blog posts (`--mine`, `--limit N`, `--all`) |
@@ -277,6 +278,26 @@ Duplicate a day's timesheets to another day (e.g., "Tuesday was the same client 
 tp ts copy --from 2026-03-10 --to 2026-03-11 --yes
 tp ts copy --from 2026-03-10 --to 2026-03-11 --keep-description --yes
 ```
+
+### Querying Timesheets
+
+Search timesheets across employees, clients, and projects with flexible grouping:
+
+```bash
+# Who worked on Rewards this FY? (grouped by employee)
+tp query --client SSW --project 4BPT0L --from 2024-07-01 --to 2025-06-30
+
+# All SSW projects by hours (grouped by project)
+tp query --client SSW --from 2024-07-01 --to 2025-06-30 --group-by project
+
+# Flat view with pagination
+tp query --client NWIND --group-by none --limit 20 --page 2
+
+# Export raw JSON for analysis
+tp query --client SSW --project 4BPT0L --from 2024-07-01 --to 2025-06-30 --json > rewards-fy25.json
+```
+
+Grouping modes: `employee` (default), `project`, `client`, `none` (flat table with pagination).
 
 ### Blog Posts
 
