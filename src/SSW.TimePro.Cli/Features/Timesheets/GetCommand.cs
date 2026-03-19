@@ -21,6 +21,10 @@ public class GetCommand : AsyncCommand<GetCommand.Settings>
         [Description("Date (yyyy-MM-dd). Defaults to today")]
         public string? Date { get; set; }
 
+        [CommandOption("--date <DATE>")]
+        [Description("Date (yyyy-MM-dd). Alternative to positional argument")]
+        public string? DateOption { get; set; }
+
         [CommandOption("--week [OFFSET]")]
         [Description("Show week view. Optional offset: 0=this week, -1=last week")]
         [DefaultValue(null)]
@@ -82,9 +86,10 @@ public class GetCommand : AsyncCommand<GetCommand.Settings>
                 return await RenderWeek(empId, from, to, settings);
             }
 
-            // Single day
-            var date = settings.Date is not null
-                ? DateOnly.ParseExact(settings.Date, "yyyy-MM-dd", CultureInfo.InvariantCulture)
+            // Single day (--date option takes precedence over positional argument)
+            var dateStr = settings.DateOption ?? settings.Date;
+            var date = dateStr is not null
+                ? DateOnly.ParseExact(dateStr, "yyyy-MM-dd", CultureInfo.InvariantCulture)
                 : DateOnly.FromDateTime(DateTime.Today);
 
             return await RenderDay(empId, date, settings);

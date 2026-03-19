@@ -3,6 +3,7 @@ using System.Globalization;
 using SSW.TimePro.Cli.Infrastructure.ApiClient;
 using SSW.TimePro.Cli.Infrastructure.Config;
 using SSW.TimePro.Cli.Infrastructure.Output;
+using SSW.TimePro.Cli.Shared;
 using SSW.TimePro.Cli.Shared.Models;
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -78,7 +79,7 @@ public class CopyCommand : AsyncCommand<CopyCommand.Settings>
             var global = _config.LoadGlobalConfig();
             var toDayName = toDate.DayOfWeek.ToString();
             var targetLocation = global.WfhDays.Contains(toDayName, StringComparer.OrdinalIgnoreCase)
-                ? "Home" : global.DefaultLocation;
+                ? "Home" : LocationResolver.Resolve(global.DefaultLocation);
 
             // Preview
             if (!settings.Json)

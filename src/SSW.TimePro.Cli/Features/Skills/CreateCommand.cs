@@ -223,14 +223,23 @@ public class CreateCommand : Command<CreateCommand.Settings>
             sb.AppendLine();
         }
 
+        sb.AppendLine("## Location Defaults");
+        sb.AppendLine("Valid location IDs: `SSW` (At My Company), `Home` (At Home), `Client` (At Client), `Travel`, `Other`");
+        sb.AppendLine();
+        sb.AppendLine("Common aliases are resolved automatically: Office→SSW, WFH→Home, Onsite→Client");
+        sb.AppendLine();
         if (global.WfhDays.Count > 0)
         {
-            sb.AppendLine("## Location Defaults");
             sb.AppendLine($"- WFH days: {string.Join(", ", global.WfhDays)}");
             sb.AppendLine($"- Default: {global.DefaultLocation}");
             sb.AppendLine("- Location is auto-applied when creating timesheets based on the day");
-            sb.AppendLine();
         }
+        else
+        {
+            sb.AppendLine($"- Default: {global.DefaultLocation}");
+            sb.AppendLine("- No WFH days configured — use `tp loc set Home --day Mon,Tue` to set");
+        }
+        sb.AppendLine();
 
         return sb.ToString();
     }

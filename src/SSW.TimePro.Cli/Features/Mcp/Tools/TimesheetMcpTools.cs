@@ -3,6 +3,7 @@ using System.Text.Json;
 using ModelContextProtocol.Server;
 using SSW.TimePro.Cli.Infrastructure.ApiClient;
 using SSW.TimePro.Cli.Infrastructure.Config;
+using SSW.TimePro.Cli.Shared;
 using SSW.TimePro.Cli.Shared.Models;
 
 namespace SSW.TimePro.Cli.Features.Mcp.Tools;
@@ -87,7 +88,11 @@ public class TimesheetMcpTools
             var dateOnly = DateOnly.ParseExact(date, "yyyy-MM-dd");
             var dayName = dateOnly.DayOfWeek.ToString();
             location = global.WfhDays.Contains(dayName, StringComparer.OrdinalIgnoreCase)
-                ? "Home" : global.DefaultLocation;
+                ? "Home" : LocationResolver.Resolve(global.DefaultLocation);
+        }
+        else
+        {
+            location = LocationResolver.Resolve(location);
         }
 
         var request = new TimesheetRequest

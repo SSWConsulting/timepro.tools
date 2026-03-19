@@ -3,6 +3,7 @@ using System.Globalization;
 using SSW.TimePro.Cli.Infrastructure.ApiClient;
 using SSW.TimePro.Cli.Infrastructure.Config;
 using SSW.TimePro.Cli.Infrastructure.Output;
+using SSW.TimePro.Cli.Shared;
 using SSW.TimePro.Cli.Shared.Models;
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -109,6 +110,8 @@ public class CreateCommand : AsyncCommand<CreateCommand.Settings>
                 ? "Home"
                 : global.DefaultLocation;
         }
+
+        location = LocationResolver.Resolve(location ?? "SSW");
 
         try
         {

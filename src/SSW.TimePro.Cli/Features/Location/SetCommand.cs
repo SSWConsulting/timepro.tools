@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using SSW.TimePro.Cli.Infrastructure.Config;
 using SSW.TimePro.Cli.Infrastructure.Output;
+using SSW.TimePro.Cli.Shared;
 using Spectre.Console.Cli;
 
 namespace SSW.TimePro.Cli.Features.Location;
@@ -13,7 +14,7 @@ public class SetCommand : Command<SetCommand.Settings>
     public class Settings : CommandSettings
     {
         [CommandArgument(0, "<LOCATION>")]
-        [Description("Location name (e.g., Home, Office)")]
+        [Description("Location: SSW, Home, Client, Travel, Other (or aliases like Office, WFH)")]
         public string Location { get; set; } = string.Empty;
 
         [CommandOption("--day <DAYS>")]
@@ -26,6 +27,7 @@ public class SetCommand : Command<SetCommand.Settings>
     public override int Execute(CommandContext context, Settings settings)
     {
         var global = _config.LoadGlobalConfig();
+        var resolvedLocation = LocationResolver.Resolve(settings.Location);
 
         if (settings.Days is not null)
         {
@@ -50,13 +52,13 @@ public class SetCommand : Command<SetCommand.Settings>
                 }
             }
 
-            if (settings.Location.Equals("Home", StringComparison.OrdinalIgnoreCase))
+            if (resolvedLocation == "Home")
             {
                 global.WfhDays = days;
             }
-            else if (settings.Location.Equals("Office", StringComparison.OrdinalIgnoreCase))
+            else
             {
-                // Setting office days = remove those from WFH
+                // Setting non-home days = remove those from WFH
                 global.WfhDays = global.WfhDays
                     .Where(d => !days.Contains(d, StringComparer.OrdinalIgnoreCase))
                     .ToList();
@@ -64,8 +66,8 @@ public class SetCommand : Command<SetCommand.Settings>
         }
         else
         {
-            // Setting default location
-            global.DefaultLocation = settings.Location;
+            // Setting default location (stored as canonical API ID)
+            global.DefaultLocation = resolvedLocation;
         }
 
         _config.SaveGlobalConfig(global);
