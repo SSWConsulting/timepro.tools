@@ -172,9 +172,12 @@ tp ts create \
 ```
 
 When creating timesheets:
+- **Category** is auto-resolved from repo-mappings or recent timesheets (past 14 days); pass `--category` to override
 - **Rate** is checked automatically; you'll get a warning if it's expired or expiring soon
 - **Location** defaults to your WFH settings if not specified
 - **Locked timesheets** (invoiced) only allow location and description changes
+- **Duplicate detection** — if a timesheet already exists for the time slot, you'll get a clear error suggesting `tp ts update` instead
+- **API error details** — validation errors now show the specific field and message from the API
 
 ### Week View
 
@@ -202,10 +205,25 @@ Map repositories to clients/projects so AI agents know what to bill:
 ```bash
 tp map set ~/Developer/git/Northwind/traders-app \
   --remote github.com/Northwind/traders-app \
-  --client NWIND --project 1I776Q --project-name "Northwind Traders"
+  --client NWIND --project 1I776Q --project-name "Northwind Traders" \
+  --category WEBDEV
 
 tp map set ~/Developer/git/SSW.Rewards.Mobile \
-  --client SSW --project 4BPT0L --project-name "Rewards (Mobile app)"
+  --client SSW --project 4BPT0L --project-name "Rewards (Mobile app)" \
+  --category WEBDEV
+```
+
+The `--category` is recommended — it enables `tp ts create` to auto-resolve the category without `--category` on every call. When updating an existing mapping, omitting `--category`, `--project-name`, or `--remote` preserves their current values.
+
+`tp map list` shows all mappings including their category:
+
+```
+┌──────────────────────┬────────┬─────────┬────────────────────┬──────────┐
+│ Path / Remote        │ Client │ Project │ Name               │ Category │
+├──────────────────────┼────────┼─────────┼────────────────────┼──────────┤
+│ ~/Developer/git/Nort │ NWIND  │ 1I776Q  │ Northwind Traders  │ WEBDEV   │
+│ hwind/traders-app    │        │         │                    │          │
+└──────────────────────┴────────┴─────────┴────────────────────┴──────────┘
 ```
 
 Detection supports:

@@ -59,8 +59,11 @@ public class SetCommand : Command<SetCommand.Settings>
         {
             existing.ClientId = settings.ClientId;
             existing.ProjectId = settings.ProjectId;
-            existing.ProjectName = settings.ProjectName;
-            existing.CategoryId = settings.Category;
+            // Preserve optional fields when not explicitly specified on update
+            if (settings.ProjectName is not null)
+                existing.ProjectName = settings.ProjectName;
+            if (settings.Category is not null)
+                existing.CategoryId = settings.Category;
             if (settings.Remote is not null)
                 existing.RemotePattern = settings.Remote;
         }

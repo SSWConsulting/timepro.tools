@@ -134,6 +134,12 @@ public class CreateCommand : AsyncCommand<CreateCommand.Settings>
                 }
             }
 
+            // Auto-resolve category when not explicitly specified
+            var categoryId = settings.Category
+                ?? ResolveCategoryFromRepoMapping(settings.ClientId, settings.ProjectId)
+                ?? await ResolveCategoryFromRecentTimesheets(
+                    tenant.EmployeeId, settings.ClientId, settings.ProjectId, date);
+
             var request = new TimesheetRequest
             {
                 EmpId = tenant.EmployeeId,
@@ -146,7 +152,7 @@ public class CreateCommand : AsyncCommand<CreateCommand.Settings>
                 TimeLess = lessMins > 0 ? lessMins / 60m : null,
                 Note = settings.Description,
                 LocationId = location,
-                CategoryId = settings.Category,
+                CategoryId = categoryId,
                 BillableId = settings.Billable ?? "B",
                 SellPrice = rate?.Rate,
             };
@@ -161,6 +167,8 @@ public class CreateCommand : AsyncCommand<CreateCommand.Settings>
                 AnsiConsole.MarkupLine($"  Time:     {startTime} - {endTime}");
                 AnsiConsole.MarkupLine($"  Location: {Markup.Escape(location ?? "?")}");
                 AnsiConsole.MarkupLine($"  Billable: {request.BillableId}");
+                if (categoryId is not null)
+                    AnsiConsole.MarkupLine($"  Category: {Markup.Escape(categoryId)}{(settings.Category is null ? " [dim](auto-resolved)[/]" : "")}");
                 if (rate?.Rate is not null)
                     AnsiConsole.MarkupLine($"  Rate:     ${rate.Rate:F2}");
                 if (!string.IsNullOrEmpty(settings.Description))
@@ -195,8 +203,61 @@ public class CreateCommand : AsyncCommand<CreateCommand.Settings>
         }
         catch (ApiException ex)
         {
-            OutputHelper.WriteError($"API error ({ex.StatusCode}): {ex.Message}");
+            var detail = ApiErrorParser.ExtractDetail(ex.ResponseBody);
+            if (detail is not null && detail.Contains("duplicate", StringComparison.OrdinalIgnoreCase))
+            {
+                OutputHelper.WriteError("A timesheet already exists for this time slot.");
+                OutputHelper.WriteInfo("Use 'tp ts update <ID> --description \"...\"' to update the existing entry.");
+            }
+            else if (detail is not null && detail.Contains("category", StringComparison.OrdinalIgnoreCase))
+            {
+                OutputHelper.WriteError($"API requires a category. Pass --category <ID> or add categoryId to repo-mappings.json.");
+                OutputHelper.WriteInfo("Hint: check existing timesheets with 'tp query --client <ID> --from <date> --to <date>'");
+            }
+            else
+            {
+                OutputHelper.WriteError($"API error ({ex.StatusCode}): {ex.Message}");
+                if (detail is not null)
+                    AnsiConsole.MarkupLine($"  [dim]{Markup.Escape(detail)}[/]");
+            }
             return 1;
         }
+    }
+
+    /// <summary>
+    /// Look up categoryId from repo-mappings.json for the given client/project.
+    /// </summary>
+    private string? ResolveCategoryFromRepoMapping(string clientId, string projectId)
+    {
+        var mappings = _config.LoadRepoMappings();
+        var match = mappings.FirstOrDefault(m =>
+            string.Equals(m.ClientId, clientId, StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(m.ProjectId, projectId, StringComparison.OrdinalIgnoreCase) &&
+            !string.IsNullOrEmpty(m.CategoryId));
+        return match?.CategoryId;
+    }
+
+    /// <summary>
+    /// Look up categoryId from recent timesheets for the same employee + client + project.
+    /// Searches the past 14 days for a match.
+    /// </summary>
+    private async Task<string?> ResolveCategoryFromRecentTimesheets(
+        string empId, string clientId, string projectId, DateOnly aroundDate)
+    {
+        var filter = new TimesheetSummaryFilter
+        {
+            StartDate = aroundDate.AddDays(-14).ToString("yyyy-MM-dd"),
+            EndDate = aroundDate.ToString("yyyy-MM-dd"),
+            EmployeeIds = [empId],
+            ClientIds = [clientId],
+            ProjectIds = [projectId]
+        };
+
+        var entries = await _api.QueryTimesheetsAsync(filter, CancellationToken.None);
+        return entries
+            .Where(e => !string.IsNullOrEmpty(e.CategoryId))
+            .OrderByDescending(e => e.TimesheetDate)
+            .FirstOrDefault()
+            ?.CategoryId;
     }
 }

@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using SSW.TimePro.Cli.Infrastructure.ApiClient;
 using SSW.TimePro.Cli.Infrastructure.Output;
+using SSW.TimePro.Cli.Shared.Models;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
@@ -58,16 +59,17 @@ public class AcceptCommand : AsyncCommand<AcceptCommand.Settings>
 
             if (settings.Json)
             {
-                OutputHelper.WriteJson(response);
+                OutputHelper.WriteJson(response ?? new TimesheetResponse { Success = true });
             }
-            else if (response?.Success == true)
+            else if (response is null || response.Success)
             {
+                // API returns empty body on success — treat null as success
                 OutputHelper.WriteSuccess(
-                    $"Suggested timesheet accepted (new ID: {response.TimesheetId})");
+                    $"Suggested timesheet accepted{(response?.TimesheetId is not null ? $" (new ID: {response.TimesheetId})" : "")}");
             }
             else
             {
-                OutputHelper.WriteError(response?.Message ?? "Failed to accept suggested timesheet");
+                OutputHelper.WriteError(response.Message ?? "Failed to accept suggested timesheet");
                 return 1;
             }
 
@@ -76,6 +78,9 @@ public class AcceptCommand : AsyncCommand<AcceptCommand.Settings>
         catch (ApiException ex)
         {
             OutputHelper.WriteError($"API error ({ex.StatusCode}): {ex.Message}");
+            var detail = ApiErrorParser.ExtractDetail(ex.ResponseBody);
+            if (detail is not null)
+                AnsiConsole.MarkupLine($"  [dim]{Markup.Escape(detail)}[/]");
             return 1;
         }
     }
