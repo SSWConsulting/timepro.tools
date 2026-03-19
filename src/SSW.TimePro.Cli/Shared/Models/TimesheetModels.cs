@@ -13,6 +13,7 @@ public class TimesheetItem
     public string? Project { get; set; }
     public string? ProjectId { get; set; }
     public string? Iteration { get; set; }
+    public int? IterationId { get; set; }
     public string? Category { get; set; }
     public string? Location { get; set; }
     public string? LocationId { get; set; }

@@ -101,14 +101,40 @@ public class CopyCommand : AsyncCommand<CopyCommand.Settings>
                     return 1;
             }
 
+            // Resolve iteration IDs for projects that require them.
+            // The GET response includes iteration names but not IDs,
+            // so we look up the ID by matching the name.
+            var iterationCache = new Dictionary<string, List<IterationItem>>();
+            async Task<int?> ResolveIterationIdAsync(string projectId, string? iterationName)
+            {
+                if (string.IsNullOrEmpty(iterationName)) return null;
+
+                if (!iterationCache.TryGetValue(projectId, out var iterations))
+                {
+                    iterations = await _api.GetIterationsAsync(projectId, CancellationToken.None);
+                    iterationCache[projectId] = iterations;
+                }
+
+                // Empty list means the project doesn't use iterations
+                if (iterations.Count == 0) return null;
+
+                return iterations
+                    .FirstOrDefault(i => string.Equals(i.IterationName, iterationName, StringComparison.OrdinalIgnoreCase))
+                    ?.IterationId;
+            }
+
             var created = new List<object>();
             foreach (var ts in real)
             {
+                var iterationId = ts.IterationId
+                    ?? await ResolveIterationIdAsync(ts.ProjectId ?? "", ts.Iteration);
+
                 var request = new TimesheetRequest
                 {
                     EmpId = tenant.EmployeeId,
                     ClientId = ts.ClientId ?? "",
                     ProjectId = ts.ProjectId ?? "",
+                    IterationId = iterationId,
                     DateCreated = toDate.ToString("yyyy-MM-dd"),
                     TimeStart = ReplaceDate(ts.StartTime, toDate),
                     TimeEnd = ReplaceDate(ts.EndTime, toDate),

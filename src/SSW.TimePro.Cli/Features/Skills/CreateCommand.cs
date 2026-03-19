@@ -91,6 +91,11 @@ public class CreateCommand : Command<CreateCommand.Settings>
         sb.AppendLine("tp ts create --client <ID> --project <ID> --date 2026-03-12 \\");
         sb.AppendLine("  --start 09:00 --end 17:00 --description \"Work done\" --yes");
         sb.AppendLine();
+        sb.AppendLine("# Create timesheet with iteration (required for some projects)");
+        sb.AppendLine("tp ts create --client SSW --project SSWTRN --iteration 3402 \\");
+        sb.AppendLine("  --date 2026-03-12 --category TRAIN --billable W \\");
+        sb.AppendLine("  --description \"MVP Summit\" --yes");
+        sb.AppendLine();
         sb.AppendLine("# Update timesheet (partial)");
         sb.AppendLine("tp ts update <ID> --location Home --yes");
         sb.AppendLine("tp ts update <ID> --description \"Updated notes\" --yes");
@@ -98,6 +103,7 @@ public class CreateCommand : Command<CreateCommand.Settings>
         sb.AppendLine("# Lookups");
         sb.AppendLine("tp cl search <QUERY> --json      # Find client ID");
         sb.AppendLine("tp proj list --client <ID> --json # Find project ID");
+        sb.AppendLine("tp iter list --project <ID>       # List iterations (if any, one is required)");
         sb.AppendLine("tp rate get --client <ID> --json  # Check rate/expiry");
         sb.AppendLine("tp bk list --week --json          # CRM bookings");
         sb.AppendLine();
@@ -168,6 +174,21 @@ public class CreateCommand : Command<CreateCommand.Settings>
             sb.AppendLine("gh pr list --author @me --state merged --limit 10 --json number,title,mergedAt");
         }
         sb.AppendLine("```");
+        sb.AppendLine();
+
+        sb.AppendLine("## Iterations (Sprints)");
+        sb.AppendLine("Some projects require an iteration ID when creating timesheets.");
+        sb.AppendLine("If a create fails with a 400 error, the project likely requires one.");
+        sb.AppendLine();
+        sb.AppendLine("**Detection workflow:**");
+        sb.AppendLine("1. Run `tp iter list --project <PROJECT_ID>` to check");
+        sb.AppendLine("2. If the list is non-empty, the project requires an iteration");
+        sb.AppendLine("3. Pick the matching iteration and pass `--iteration <ID>` on create");
+        sb.AppendLine();
+        sb.AppendLine("**Known projects requiring iterations:**");
+        sb.AppendLine("- `SSWTRN` (Training & Conferences) — iterations for each event/conference");
+        sb.AppendLine();
+        sb.AppendLine("The copy command (`tp ts copy`) automatically resolves iteration IDs from source timesheets.");
         sb.AppendLine();
 
         sb.AppendLine("## Important Notes");

@@ -49,6 +49,10 @@ public class CreateCommand : AsyncCommand<CreateCommand.Settings>
         [Description("Category ID")]
         public string? Category { get; set; }
 
+        [CommandOption("--iteration <ID>")]
+        [Description("Iteration/sprint ID")]
+        public int? Iteration { get; set; }
+
         [CommandOption("--billable <TYPE>")]
         [Description("Billable type: B (billable), BPP (prepaid), W (write-off)")]
         public string? Billable { get; set; }
@@ -132,6 +136,7 @@ public class CreateCommand : AsyncCommand<CreateCommand.Settings>
                 EmpId = tenant.EmployeeId,
                 ClientId = settings.ClientId,
                 ProjectId = settings.ProjectId,
+                IterationId = settings.Iteration,
                 DateCreated = date.ToString("yyyy-MM-dd"),
                 TimeStart = $"{date:yyyy-MM-dd}T{startTime}:00",
                 TimeEnd = $"{date:yyyy-MM-dd}T{endTime}:00",

@@ -62,7 +62,7 @@ public class TimesheetMcpTools
     }
 
     [McpServerTool]
-    [Description("Create a new timesheet entry.")]
+    [Description("Create a new timesheet entry. Some projects require an iteration ID — use ListIterations to check and find the correct ID.")]
     public async Task<string> CreateTimesheet(
         [Description("Client ID")] string clientId,
         [Description("Project ID")] string projectId,
@@ -72,6 +72,8 @@ public class TimesheetMcpTools
         [Description("Notes/description")] string? description = null,
         [Description("Location (e.g., Office, Home)")] string? location = null,
         [Description("Billable type: B (billable), BPP (prepaid), W (write-off)")] string billableId = "B",
+        [Description("Category ID (e.g., TRAIN, PresDe)")] string? categoryId = null,
+        [Description("Iteration/sprint ID. Required for projects that use iterations (e.g., SSWTRN). Use ListIterations to find the ID.")] int? iterationId = null,
         CancellationToken ct = default)
     {
         var tenant = _config.LoadActiveTenantConfig();
@@ -93,16 +95,28 @@ public class TimesheetMcpTools
             EmpId = tenant.EmployeeId,
             ClientId = clientId,
             ProjectId = projectId,
+            IterationId = iterationId,
             DateCreated = date,
             TimeStart = $"{date}T{startTime}:00",
             TimeEnd = $"{date}T{endTime}:00",
             Note = description,
             LocationId = location,
+            CategoryId = categoryId,
             BillableId = billableId
         };
 
         var response = await _api.CreateTimesheetAsync(request, ct);
         return JsonSerializer.Serialize(response, JsonOpts);
+    }
+
+    [McpServerTool]
+    [Description("List iterations/sprints for a project. Returns empty list if the project doesn't use iterations. If the list is non-empty, an iteration ID is required when creating timesheets for this project.")]
+    public async Task<string> ListIterations(
+        [Description("Project ID (e.g., SSWTRN)")] string projectId,
+        CancellationToken ct = default)
+    {
+        var iterations = await _api.GetIterationsAsync(projectId, ct);
+        return JsonSerializer.Serialize(iterations, JsonOpts);
     }
 
     [McpServerTool]
