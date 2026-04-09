@@ -46,6 +46,10 @@ public class ScrumCommand : AsyncCommand<ScrumCommand.Settings>
         [Description("Render and copy the body to the clipboard, then exit")]
         public bool CopyAndExit { get; set; }
 
+        [CommandOption("--format <FORMAT>")]
+        [Description("Clipboard format when using --copy: rich (default), markdown, plain")]
+        public string? Format { get; set; }
+
         [CommandOption("--html")]
         [Description("Emit the HTML body to stdout instead of the styled terminal view")]
         public bool Html { get; set; }
@@ -133,7 +137,8 @@ public class ScrumCommand : AsyncCommand<ScrumCommand.Settings>
         // --- Copy shortcut -------------------------------------------------
         if (settings.CopyAndExit)
         {
-            CopyBody(renderer, model, full: model.IsInternal);
+            var format = ParseFormat(settings.Format);
+            CopyBody(renderer, model, format, full: model.IsInternal);
             return 0;
         }
 
@@ -148,32 +153,43 @@ public class ScrumCommand : AsyncCommand<ScrumCommand.Settings>
         return 0;
     }
 
+    private enum CopyFormat { Rich, Markdown, Plain }
+
+    private static CopyFormat ParseFormat(string? raw) => raw?.ToLowerInvariant() switch
+    {
+        "markdown" or "md" => CopyFormat.Markdown,
+        "plain" or "text" or "txt" => CopyFormat.Plain,
+        _ => CopyFormat.Rich
+    };
+
     private int RunInteractive(ScrumRenderer renderer, ScrumModel model)
     {
         AnsiConsole.MarkupLine("[dim]──────────────────────────────────────────────────────────[/]");
-        AnsiConsole.MarkupLine("[dim][[c]] copy body   [[C]] copy with internal block   [[q]] quit[/]");
+        AnsiConsole.MarkupLine("[dim][[r]] copy rich text   [[m]] copy markdown   [[p]] copy plain[/]");
+        AnsiConsole.MarkupLine("[dim]Shift for internal block variant ([[R]]/[[M]]/[[P]])   [[q]] quit[/]");
 
         while (true)
         {
             var key = Console.ReadKey(intercept: true);
-            if (key.Key == ConsoleKey.Q)
-                return 0;
-            if (key.KeyChar == 'c')
+            if (key.Key == ConsoleKey.Q) return 0;
+
+            var isFull = char.IsUpper(key.KeyChar);
+            var lower = char.ToLowerInvariant(key.KeyChar);
+            var format = lower switch
             {
-                CopyBody(renderer, model, full: false);
-                continue;
-            }
-            if (key.KeyChar == 'C')
-            {
-                CopyBody(renderer, model, full: true);
-                continue;
-            }
+                'r' => (CopyFormat?)CopyFormat.Rich,
+                'm' => CopyFormat.Markdown,
+                'p' => CopyFormat.Plain,
+                _ => null
+            };
+            if (format is null) continue;
+            CopyBody(renderer, model, format.Value, full: isFull);
         }
     }
 
-    private void CopyBody(ScrumRenderer renderer, ScrumModel model, bool full)
+    private void CopyBody(ScrumRenderer renderer, ScrumModel model, CopyFormat format, bool full)
     {
-        // Re-render with forced internal if the user pressed 'C'.
+        // Re-render with forced internal if the user asked for the full-fat variant.
         var modelToCopy = model;
         if (full && !model.IsInternal)
         {
@@ -185,19 +201,40 @@ public class ScrumCommand : AsyncCommand<ScrumCommand.Settings>
                 PrimaryClientName = model.PrimaryClientName,
                 Yesterday = model.Yesterday,
                 Today = model.Today,
+                YesterdayNotes = model.YesterdayNotes,
+                TodayNotes = model.TodayNotes,
                 Internal = model.Internal ?? new InternalBlock { JoinedScrumMeeting = true }
             };
         }
 
-        var html = renderer.RenderHtml(modelToCopy);
-        var plain = renderer.RenderPlain(modelToCopy);
         var clip = new ClipboardService();
-        var result = clip.Copy(html, plain);
+        ClipboardService.Result result;
+        string label;
 
+        switch (format)
+        {
+            case CopyFormat.Rich:
+                var html = renderer.RenderHtml(modelToCopy);
+                var plainFallback = renderer.RenderPlain(modelToCopy);
+                result = clip.CopyRich(html, plainFallback);
+                label = "rich text";
+                break;
+            case CopyFormat.Markdown:
+                result = clip.CopyPlain(renderer.RenderMarkdown(modelToCopy));
+                label = "markdown";
+                break;
+            case CopyFormat.Plain:
+            default:
+                result = clip.CopyPlain(renderer.RenderPlain(modelToCopy));
+                label = "plain text";
+                break;
+        }
+
+        var variant = full ? "full-fat" : "clean";
         var message = result switch
         {
-            ClipboardService.Result.RichTextCopied => $"[green]✓[/] Copied {(full ? "full-fat" : "clean")} scrum as rich text",
-            ClipboardService.Result.PlainTextCopied => $"[yellow]✓[/] Copied {(full ? "full-fat" : "clean")} scrum as plain text (rich text unavailable)",
+            ClipboardService.Result.RichTextCopied => $"[green]✓[/] Copied {variant} scrum as {label}",
+            ClipboardService.Result.PlainTextCopied => $"[green]✓[/] Copied {variant} scrum as {label}",
             _ => "[red]✗[/] Failed to copy"
         };
         AnsiConsole.MarkupLine(message);

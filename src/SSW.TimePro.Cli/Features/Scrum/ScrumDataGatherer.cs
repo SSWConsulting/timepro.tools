@@ -61,21 +61,16 @@ public class ScrumDataGatherer
             PrimaryClientName = todaysProjects.FirstOrDefault().Client
         };
 
-        // 3. Today bullets — timesheet notes + current open PRs in each project's repo
+        // 3. Today bullets — timesheet notes are captured as separate metadata
+        //    (for agents/skills to read via --json) but intentionally NOT
+        //    rendered as bullets. Bullets come from GitHub activity only.
         foreach (var proj in todaysProjects)
         {
-            var note = realToday
-                .Where(t => t.ProjectId == proj.ProjectId && !string.IsNullOrWhiteSpace(t.Notes))
-                .Select(t => t.Notes!.Trim())
-                .FirstOrDefault();
-
-            if (!string.IsNullOrEmpty(note))
+            foreach (var note in realToday
+                         .Where(t => t.ProjectId == proj.ProjectId && !string.IsNullOrWhiteSpace(t.Notes))
+                         .Select(t => t.Notes!.Trim()))
             {
-                model.Today.Add(new ScrumItem
-                {
-                    Kind = "PBI",
-                    Title = TruncateNote(note)
-                });
+                model.TodayNotes.Add(note);
             }
 
             // Open PRs by me in the issues repo (if mapped)
@@ -106,18 +101,11 @@ public class ScrumDataGatherer
         {
             foreach (var proj in todaysProjects)
             {
-                var note = yesterdaySheets
-                    .Where(t => t.ProjectId == proj.ProjectId && !string.IsNullOrWhiteSpace(t.Notes))
-                    .Select(t => t.Notes!.Trim())
-                    .FirstOrDefault();
-                if (!string.IsNullOrEmpty(note))
+                foreach (var note in yesterdaySheets
+                             .Where(t => t.ProjectId == proj.ProjectId && !string.IsNullOrWhiteSpace(t.Notes))
+                             .Select(t => t.Notes!.Trim()))
                 {
-                    model.Yesterday.Add(new ScrumItem
-                    {
-                        Status = "✅ Done",
-                        Kind = "",
-                        Title = TruncateNote(note)
-                    });
+                    model.YesterdayNotes.Add(note);
                 }
 
                 // Bleed-back: merged PRs by me since the last-last project day, up to yesterday.
@@ -242,11 +230,4 @@ public class ScrumDataGatherer
     private static bool IsLeave(TimesheetItem t) =>
         string.Equals(t.ProjectId, "LEAVE", StringComparison.OrdinalIgnoreCase) || t.IsLeave;
 
-    private static string TruncateNote(string note)
-    {
-        // Strip auto-generated leave/EasyLeave prefix if any, collapse whitespace.
-        var cleaned = note.Replace("\r", "").Trim();
-        var firstLine = cleaned.Split('\n')[0].Trim();
-        return firstLine.Length > 220 ? firstLine[..217] + "…" : firstLine;
-    }
 }

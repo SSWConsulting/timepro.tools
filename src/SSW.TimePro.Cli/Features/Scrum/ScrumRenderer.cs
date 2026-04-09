@@ -69,10 +69,18 @@ public class ScrumRenderer
     }
 
     /// <summary>
-    /// Plain-text flavor used as the clipboard fallback when rich text fails.
-    /// No OSC 8 hyperlinks, no ANSI — just Markdown-ish link syntax.
+    /// Markdown flavor: uses <c>[#1234](url)</c> link syntax. Useful for
+    /// pasting into Slack / GitHub comments / markdown-aware editors.
     /// </summary>
-    public string RenderPlain(ScrumModel m)
+    public string RenderMarkdown(ScrumModel m) => RenderText(m, markdown: true);
+
+    /// <summary>
+    /// Pure plain-text flavor: the URL is spelled out in parentheses.
+    /// Used as the clipboard fallback when rich text fails.
+    /// </summary>
+    public string RenderPlain(ScrumModel m) => RenderText(m, markdown: false);
+
+    private string RenderText(ScrumModel m, bool markdown)
     {
         var sb = new StringBuilder();
         sb.AppendLine("Hi team,");
@@ -95,7 +103,7 @@ public class ScrumRenderer
             sb.AppendLine("- (nothing recorded)");
         else
             foreach (var item in m.Yesterday)
-                sb.AppendLine(RenderItemPlain(item));
+                sb.AppendLine(RenderItemText(item, markdown));
         sb.AppendLine();
 
         sb.AppendLine("Today I'm working on:");
@@ -103,7 +111,7 @@ public class ScrumRenderer
             sb.AppendLine("- (nothing planned)");
         else
             foreach (var item in m.Today)
-                sb.AppendLine(RenderItemPlain(item));
+                sb.AppendLine(RenderItemText(item, markdown));
 
         sb.AppendLine();
         if (!string.IsNullOrEmpty(_config.FooterUrl))
@@ -173,14 +181,18 @@ public class ScrumRenderer
         return $"- {prefix} – {item.Title}";
     }
 
-    private static string RenderItemPlain(ScrumItem item)
+    private static string RenderItemText(ScrumItem item, bool markdown)
     {
         var parts = new List<string>();
         if (!string.IsNullOrEmpty(item.Status)) parts.Add(item.Status);
         if (!string.IsNullOrEmpty(item.Kind)) parts.Add(item.Kind);
         var prefix = string.Join(" – ", parts);
         if (!string.IsNullOrEmpty(item.Url) && !string.IsNullOrEmpty(item.Reference))
-            return $"- {prefix} – {item.Title} [{item.Reference}]({item.Url})";
+        {
+            return markdown
+                ? $"- {prefix} – {item.Title} [{item.Reference}]({item.Url})"
+                : $"- {prefix} – {item.Title} {item.Reference} ({item.Url})";
+        }
         return $"- {prefix} – {item.Title}";
     }
 

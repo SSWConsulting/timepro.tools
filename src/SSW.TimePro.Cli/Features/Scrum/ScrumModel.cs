@@ -24,6 +24,19 @@ public class ScrumModel
     public List<ScrumItem> Yesterday { get; set; } = [];
     public List<ScrumItem> Today { get; set; } = [];
 
+    /// <summary>
+    /// Raw timesheet notes for yesterday, keyed by project name. Not
+    /// included in the rendered scrum bullets by default (too noisy) —
+    /// exposed in the JSON output so agents / skills can use them as
+    /// context when enhancing the scrum.
+    /// </summary>
+    public List<string> YesterdayNotes { get; set; } = [];
+
+    /// <summary>
+    /// Raw timesheet notes for today. Same rationale as <see cref="YesterdayNotes"/>.
+    /// </summary>
+    public List<string> TodayNotes { get; set; } = [];
+
     public InternalBlock? Internal { get; set; }
 }
 
