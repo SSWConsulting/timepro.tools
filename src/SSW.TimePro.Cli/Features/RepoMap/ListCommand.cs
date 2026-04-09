@@ -37,7 +37,8 @@ public class ListCommand : Command<ListCommand.Settings>
                 .AddColumn("Client")
                 .AddColumn("Project")
                 .AddColumn("Name")
-                .AddColumn("Category");
+                .AddColumn("Category")
+                .AddColumn("Issues repo");
 
             foreach (var m in list)
             {
@@ -49,7 +50,8 @@ public class ListCommand : Command<ListCommand.Settings>
                     Markup.Escape(m.ClientId),
                     Markup.Escape(m.ProjectId),
                     Markup.Escape(m.ProjectName ?? ""),
-                    m.CategoryId is not null ? Markup.Escape(m.CategoryId) : "[dim]—[/]");
+                    m.CategoryId is not null ? Markup.Escape(m.CategoryId) : "[dim]—[/]",
+                    string.IsNullOrEmpty(m.IssuesRepo) ? "[dim]—[/]" : Markup.Escape(m.IssuesRepo));
             }
 
             AnsiConsole.Write(table);

@@ -289,6 +289,45 @@ public class CreateCommand : Command<CreateCommand.Settings>
         sb.AppendLine("- Always use `--end 18:00 --less 60` for a standard 8h day with lunch");
         sb.AppendLine();
 
+        // ───────── Daily Scrum ─────────
+        sb.AppendLine("## Daily Scrum (`tp scrum`)");
+        sb.AppendLine("Generates an SSW-format daily scrum email from timesheets, CRM bookings,");
+        sb.AppendLine("repo mappings and GitHub activity (via local `gh` CLI).");
+        sb.AppendLine();
+        sb.AppendLine("```bash");
+        sb.AppendLine("tp scrum                            # Print styled scrum for today");
+        sb.AppendLine("tp scrum --json                     # Structured output for agents");
+        sb.AppendLine("tp scrum --html                     # HTML body (for emailing / piping)");
+        sb.AppendLine("tp scrum --date 2026-04-09          # Generate for a specific date");
+        sb.AppendLine("tp scrum --project V24063           # Filter to one project");
+        sb.AppendLine("tp scrum --internal                 # Force internal daily scrum format");
+        sb.AppendLine("tp scrum --external                 # Force client-facing format");
+        sb.AppendLine("tp scrum -i                         # Interactive: r/m/p to copy rich/markdown/plain");
+        sb.AppendLine("tp scrum --copy --format rich       # Render & copy (rich | markdown | plain)");
+        sb.AppendLine("tp scrum --set-trello-url URL       # Save Trello URL for internal block");
+        sb.AppendLine("```");
+        sb.AppendLine();
+        sb.AppendLine("**How it works:**");
+        sb.AppendLine("- **Today** = open PRs by me in the project's issues repo.");
+        sb.AppendLine("- **Yesterday** = the last *working day where I logged the same project*, not literal");
+        sb.AppendLine("  yesterday. Bleeds back up to 7 days to surface PRs merged between visits.");
+        sb.AppendLine("- **Internal vs external** = classified from today's CRM bookings. Any non-SSW client");
+        sb.AppendLine("  booking or timesheet → external format. All-SSW → internal with the extra block.");
+        sb.AppendLine("- **Issues repo**: if a project's issues live in a different repo than the code, set");
+        sb.AppendLine("  it via `tp map set <path> --client <ID> --project <ID> --issues-repo org/repo`.");
+        sb.AppendLine("- Raw timesheet notes are exposed in `--json` as `yesterdayNotes` / `todayNotes` for");
+        sb.AppendLine("  agents to use as enrichment context — they are intentionally NOT rendered as bullets.");
+        sb.AppendLine();
+        sb.AppendLine("**Augmenting with extra context:**");
+        sb.AppendLine("When an agent has more information than `tp scrum` can gather on its own (e.g., a");
+        sb.AppendLine("longer description of what was done, blockers the user mentioned in chat, or extra");
+        sb.AppendLine("PBIs to add):");
+        sb.AppendLine("1. Run `tp scrum --json` to get the structured baseline.");
+        sb.AppendLine("2. Show the user the generated scrum and ask what to add/edit.");
+        sb.AppendLine("3. Assemble the final email text yourself (plain markdown is fine) and copy it to");
+        sb.AppendLine("   the clipboard via `pbcopy` / `wl-copy` — do not try to round-trip through `tp scrum`.");
+        sb.AppendLine();
+
         // ───────── Important Notes ─────────
         sb.AppendLine("## Important Notes");
         sb.AppendLine("- Suggested timesheets improve accuracy stats — prefer accepting over creating new");

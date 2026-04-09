@@ -35,6 +35,10 @@ public class SetCommand : Command<SetCommand.Settings>
         [CommandOption("--category <CAT>")]
         [Description("Category ID")]
         public string? Category { get; set; }
+
+        [CommandOption("--issues-repo <REPO>")]
+        [Description("GitHub repo where issues/PRs live (if different from the code repo). E.g. asfaudits/HubX")]
+        public string? IssuesRepo { get; set; }
     }
 
     public SetCommand(IConfigService config) => _config = config;
@@ -48,12 +52,15 @@ public class SetCommand : Command<SetCommand.Settings>
         }
 
         var mappings = _config.LoadRepoMappings();
-        var normalizedPath = settings.Path.Replace("~", Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
+        var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        string Expand(string p) => p.StartsWith("~")
+            ? home + p.AsSpan(1).ToString()
+            : p;
+        var normalizedInput = Expand(settings.Path);
 
-        // Update or add
+        // Match by expanded path so "~/foo" and "/Users/me/foo" dedupe.
         var existing = mappings.FirstOrDefault(m =>
-            m.PathPattern.Equals(settings.Path, StringComparison.OrdinalIgnoreCase) ||
-            m.PathPattern.Equals(normalizedPath, StringComparison.OrdinalIgnoreCase));
+            Expand(m.PathPattern).Equals(normalizedInput, StringComparison.OrdinalIgnoreCase));
 
         if (existing is not null)
         {
@@ -66,6 +73,8 @@ public class SetCommand : Command<SetCommand.Settings>
                 existing.CategoryId = settings.Category;
             if (settings.Remote is not null)
                 existing.RemotePattern = settings.Remote;
+            if (settings.IssuesRepo is not null)
+                existing.IssuesRepo = settings.IssuesRepo;
         }
         else
         {
@@ -76,7 +85,8 @@ public class SetCommand : Command<SetCommand.Settings>
                 ClientId = settings.ClientId,
                 ProjectId = settings.ProjectId,
                 ProjectName = settings.ProjectName,
-                CategoryId = settings.Category
+                CategoryId = settings.Category,
+                IssuesRepo = settings.IssuesRepo
             });
         }
 

@@ -35,6 +35,14 @@ public class RepoMappingEntry
     public string ProjectId { get; set; } = string.Empty;
     public string? ProjectName { get; set; }
     public string? CategoryId { get; set; }
+
+    /// <summary>
+    /// Optional "owner/repo" where issues/PRs for this project actually live,
+    /// when different from the code repo. Used by <c>tp scrum</c> to look up
+    /// PRs and assigned issues. Example: chat-bot's code is in
+    /// <c>asfaudits/chat-bot</c> but issues are tracked in <c>asfaudits/HubX</c>.
+    /// </summary>
+    public string? IssuesRepo { get; set; }
 }
 
 public class ConfigService : IConfigService
