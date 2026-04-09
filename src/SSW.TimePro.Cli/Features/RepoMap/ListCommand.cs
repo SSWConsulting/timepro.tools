@@ -36,7 +36,8 @@ public class ListCommand : Command<ListCommand.Settings>
                 .AddColumn("Path / Remote")
                 .AddColumn("Client")
                 .AddColumn("Project")
-                .AddColumn("Name");
+                .AddColumn("Name")
+                .AddColumn("Issues repo");
 
             foreach (var m in list)
             {
@@ -47,7 +48,8 @@ public class ListCommand : Command<ListCommand.Settings>
                     pattern,
                     Markup.Escape(m.ClientId),
                     Markup.Escape(m.ProjectId),
-                    Markup.Escape(m.ProjectName ?? ""));
+                    Markup.Escape(m.ProjectName ?? ""),
+                    string.IsNullOrEmpty(m.IssuesRepo) ? "[dim]—[/]" : Markup.Escape(m.IssuesRepo));
             }
 
             AnsiConsole.Write(table);
