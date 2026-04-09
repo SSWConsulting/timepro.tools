@@ -6,9 +6,9 @@ namespace SSW.TimePro.Cli.Infrastructure.Config;
 /// Detects repository mapping for a given directory, with git worktree and remote URL support.
 /// Resolution order (most specific wins):
 ///   1. Exact path match on cwd or main worktree path
-///   2. Remote URL exact match (e.g., github.com/asfaudits/chat-bot)
-///   3. Glob path match (e.g., ~/Developer/git/ASF/*)
-///   4. Glob remote match (e.g., github.com/asfaudits/*)
+///   2. Remote URL exact match (e.g., github.com/Northwind/traders-app)
+///   3. Glob path match (e.g., ~/Developer/git/Northwind/*)
+///   4. Glob remote match (e.g., github.com/Northwind/*)
 /// </summary>
 public static class RepoDetector
 {

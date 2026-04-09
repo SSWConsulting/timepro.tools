@@ -215,7 +215,7 @@ public class ScrumDataGatherer
         if (explicitMatch is not null) return explicitMatch.IssuesRepo;
 
         // Otherwise fall back to a concrete "github.com/org/repo" remote
-        // (skipping org-wide wildcards like "github.com/asfaudits/*").
+        // (skipping org-wide wildcards like "github.com/Northwind/*").
         var remoteMatch = candidates
             .Select(m => m.RemotePattern)
             .FirstOrDefault(r => r is not null && r.Contains("github.com/") && !r.EndsWith("/*"));

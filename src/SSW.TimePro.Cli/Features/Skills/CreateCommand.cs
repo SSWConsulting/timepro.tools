@@ -299,7 +299,7 @@ public class CreateCommand : Command<CreateCommand.Settings>
         sb.AppendLine("tp scrum --json                     # Structured output for agents");
         sb.AppendLine("tp scrum --html                     # HTML body (for emailing / piping)");
         sb.AppendLine("tp scrum --date 2026-04-09          # Generate for a specific date");
-        sb.AppendLine("tp scrum --project V24063           # Filter to one project");
+        sb.AppendLine("tp scrum --project 1I776Q           # Filter to one project");
         sb.AppendLine("tp scrum --internal                 # Force internal daily scrum format");
         sb.AppendLine("tp scrum --external                 # Force client-facing format");
         sb.AppendLine("tp scrum -i                         # Interactive: r/m/p to copy rich/markdown/plain");

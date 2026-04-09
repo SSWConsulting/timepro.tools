@@ -26,7 +26,7 @@ public class RepoMappingEntry
     public string PathPattern { get; set; } = string.Empty;
 
     /// <summary>
-    /// Git remote URL pattern (e.g., "github.com/asfaudits/chat-bot" or "github.com/asfaudits/*").
+    /// Git remote URL pattern (e.g., "github.com/Northwind/traders-app" or "github.com/Northwind/*").
     /// Matched against the origin remote URL. Supports trailing /* for org-wide matching.
     /// </summary>
     public string? RemotePattern { get; set; }
@@ -39,8 +39,9 @@ public class RepoMappingEntry
     /// <summary>
     /// Optional "owner/repo" where issues/PRs for this project actually live,
     /// when different from the code repo. Used by <c>tp scrum</c> to look up
-    /// PRs and assigned issues. Example: chat-bot's code is in
-    /// <c>asfaudits/chat-bot</c> but issues are tracked in <c>asfaudits/HubX</c>.
+    /// PRs and assigned issues. Example: a mobile sandbox repo's code is in
+    /// <c>Northwind/traders-mobile</c> but issues are tracked in
+    /// <c>Northwind/traders-app</c>.
     /// </summary>
     public string? IssuesRepo { get; set; }
 }

@@ -13,7 +13,8 @@ SSW TimePro is a time tracking and invoicing system. This CLI makes it fast to v
 - **Suggested Timesheets** — View and accept suggested timesheets to keep accuracy stats high
 - **CRM Bookings** — See your appointments from the CRM calendar
 - **Leave Management** — Create, list, and cancel EasyLeave requests
-- **Repo Mapping** — Map git repos to clients/projects; auto-detects via path or remote URL, with git worktree support
+- **Repo Mapping** — Map git repos to clients/projects; auto-detects via path or remote URL, with git worktree support; optional `--issues-repo` for projects whose issues live in a different GitHub repo than the code
+- **Daily Scrum** — Generate an SSW-format daily scrum email from timesheets, CRM bookings and GitHub activity, with rich-text / markdown / plain clipboard support and an interactive copy mode
 - **Location Defaults** — Set WFH days so location is auto-applied when creating timesheets
 - **CSV Export** — Export timesheets for tax reports or analysis
 - **Skills Generation** — Generate agent skill files with project context and `gh` commands
@@ -134,6 +135,7 @@ tp ts get 2026-03-12       # Specific date
 | `tp map list` | List all repo mappings |
 | `tp map remove PATH` | Remove a repo mapping |
 | `tp query` | Query timesheets across employees/projects (`--group-by`, `--json`) |
+| `tp scrum` | Generate a daily scrum email from timesheets + GitHub (`-i`, `--copy --format rich\|markdown\|plain`, `--json`) |
 | `tp skills create TARGET` | Generate agent skill files |
 | `tp user me` | Show current user info |
 | `tp blog list` | Latest blog posts (`--mine`, `--limit N`, `--all`) |
@@ -213,17 +215,27 @@ tp map set ~/Developer/git/SSW.Rewards.Mobile \
   --category WEBDEV
 ```
 
-The `--category` is recommended — it enables `tp ts create` to auto-resolve the category without `--category` on every call. When updating an existing mapping, omitting `--category`, `--project-name`, or `--remote` preserves their current values.
+The `--category` is recommended — it enables `tp ts create` to auto-resolve the category without `--category` on every call. When updating an existing mapping, omitting `--category`, `--project-name`, `--remote`, or `--issues-repo` preserves their current values. `~`-prefixed and absolute paths are deduped against each other, so re-running `set` on the same repo updates in place rather than creating a duplicate entry.
 
-`tp map list` shows all mappings including their category:
+**Issues repo**: when a project's issues/PRs live in a **different** GitHub repo than the code (for example the code sits in a sandbox repo but issues are tracked in the main product repo), add `--issues-repo owner/repo`. This is what `tp scrum` uses to resolve PR and issue references:
+
+```bash
+tp map set ~/Developer/git/Northwind/traders-mobile \
+  --client NWIND --project 1I776Q \
+  --issues-repo Northwind/traders-app
+```
+
+`tp map list` shows all mappings including their category and issues repo:
 
 ```
-┌──────────────────────┬────────┬─────────┬────────────────────┬──────────┐
-│ Path / Remote        │ Client │ Project │ Name               │ Category │
-├──────────────────────┼────────┼─────────┼────────────────────┼──────────┤
-│ ~/Developer/git/Nort │ NWIND  │ 1I776Q  │ Northwind Traders  │ WEBDEV   │
-│ hwind/traders-app    │        │         │                    │          │
-└──────────────────────┴────────┴─────────┴────────────────────┴──────────┘
+┌──────────────────────┬────────┬─────────┬────────────────────┬──────────┬─────────────────────────┐
+│ Path / Remote        │ Client │ Project │ Name               │ Category │ Issues repo             │
+├──────────────────────┼────────┼─────────┼────────────────────┼──────────┼─────────────────────────┤
+│ ~/Developer/git/Nort │ NWIND  │ 1I776Q  │ Northwind Traders  │ WEBDEV   │ —                       │
+│ hwind/traders-app    │        │         │                    │          │                         │
+│ ~/Developer/git/Nort │ NWIND  │ 1I776Q  │ Northwind Traders  │ WEBDEV   │ Northwind/traders-app   │
+│ hwind/traders-mobile │        │         │                    │          │                         │
+└──────────────────────┴────────┴─────────┴────────────────────┴──────────┴─────────────────────────┘
 ```
 
 Detection supports:
@@ -316,6 +328,55 @@ tp query --client SSW --project 4BPT0L --from 2024-07-01 --to 2025-06-30 --json 
 ```
 
 Grouping modes: `employee` (default), `project`, `client`, `none` (flat table with pagination).
+
+### Daily Scrum
+
+Generate an SSW-format daily scrum email from your timesheets, CRM bookings and GitHub activity — no more hand-assembling yesterday's merged PRs every morning.
+
+```bash
+tp scrum                            # Styled terminal view of today's scrum
+tp scrum --json                     # Structured output for agents / scripts
+tp scrum --html                     # HTML body (for emailing / piping)
+tp scrum -i                         # Interactive: r/m/p to copy rich/markdown/plain, q to quit
+tp scrum --copy --format rich       # Render & copy as RTF (Outlook / Apple Mail / Gmail)
+tp scrum --copy --format markdown   # Copy with [#1234](url) link syntax
+tp scrum --copy --format plain      # Copy with URLs spelled out inline
+tp scrum --date 2026-04-09          # Generate for a specific date
+tp scrum --project 1I776Q           # Filter to one project
+tp scrum --internal                 # Force internal daily scrum format
+tp scrum --external                 # Force client-facing format
+tp scrum --set-trello-url URL       # Save a Trello URL for the internal block (one-off)
+```
+
+**How it works**:
+
+- **Today** = open PRs authored by you in the project's issues repo.
+- **Yesterday** = the last *working day you logged the same project*, not literal calendar yesterday. If your last day on this project had no merged PRs, it bleeds back up to 7 days to surface PRs that shipped between visits.
+- **Internal vs external** — classified from today's CRM bookings: any non-SSW client booking or timesheet → external format; all-SSW → internal format with the extra block (days until next client booking, Trello URL, "joined scrum meeting" checkbox). Override with `--internal` / `--external`.
+- **Issues repo** — resolved via the `--issues-repo` field on your repo mapping (falls back to the `--remote` URL for plain `github.com/org/repo` patterns).
+- **Timesheet notes** — intentionally kept out of the rendered bullets (too noisy), but exposed in `--json` under `yesterdayNotes` / `todayNotes` so AI agents can use them as enrichment context via the companion `/daily-scrum` Claude skill.
+
+**Clipboard notes**:
+
+- Rich text on macOS uses `textutil` → `pbcopy -Prefer rtf` with an explicit UTF-8 declaration so emoji and em-dashes survive pasting into Outlook, Apple Mail and Gmail.
+- On Linux/Windows, rich text degrades to plain text automatically.
+- OSC 8 hyperlinks are embedded in the styled terminal output — in modern terminals (iTerm2, Ghostty, WezTerm, Windows Terminal, VS Code) the `#1234` references are clickable.
+
+Example output (client-facing, on the day after shipping a few PRs):
+
+```
+Hi team,
+
+Yesterday I worked on:
+- ✅ Done – PBI – Product search: add category facets #142
+- ✅ Done – PBI – Validate inventory stock-level env vars #138
+- ✅ Done – PBI – Guard checkout API against missing shipping address #135
+
+Today I'm working on:
+- PBI – Order history: paginate and expose CSV export #147
+
+<This email was sent as per https://my.sugarlearning.com/SSW/items/8291>
+```
 
 ### Blog Posts
 
@@ -423,6 +484,7 @@ timepro-cli/
 │   │   ├── RepoMap/                 # set, list, remove, detect
 │   │   ├── Summary/                 # project hours breakdown
 │   │   ├── Report/                  # monthly report
+│   │   ├── Scrum/                   # daily scrum generator (tp scrum)
 │   │   ├── Blogs/                   # latest employee blog posts
 │   │   ├── Skills/                  # create
 │   │   ├── Users/                   # me

@@ -37,7 +37,7 @@ public class SetCommand : Command<SetCommand.Settings>
         public string? Category { get; set; }
 
         [CommandOption("--issues-repo <REPO>")]
-        [Description("GitHub repo where issues/PRs live (if different from the code repo). E.g. asfaudits/HubX")]
+        [Description("GitHub repo where issues/PRs live (if different from the code repo). E.g. Northwind/traders-app")]
         public string? IssuesRepo { get; set; }
     }
 

@@ -52,6 +52,25 @@ dotnet test tests/SSW.TimePro.Cli.Integration/
 ./scripts/e2e/run-all.sh
 ```
 
+## Documentation & Examples
+
+**⚠️ Never use real client, project, or repo names in documentation, READMEs, example commands, skill files, tests, or commit messages.** The only fictional placeholder allowed in this repo is **Northwind** (the canonical sample dataset).
+
+Examples of what **not** to write:
+- Real client IDs or names (e.g. any actual SSW customer)
+- Real GitHub owner/repo slugs for customer work
+- Real PR or issue titles scraped from live projects
+- Real project codes from the TimePro system
+
+Use these placeholders instead:
+- Client: `NWIND` / `"Northwind Traders"`
+- Project ID: `1I776Q` (arbitrary placeholder, not a real TimePro ID)
+- GitHub repo: `Northwind/traders-app`, `Northwind/traders-mobile`
+- PR/issue numbers: `#42`, `#108`, `#142` — any small integers are fine
+- Example descriptions: "Product search", "Checkout API", "Order history", etc.
+
+This rule applies to anything under version control, anything emitted by `tp skills create`, and anything in example output blocks. When updating docs, grep the working tree for anything that looks like a real customer name, a real-world repo slug, or internal-only project codes before committing. If in doubt, replace with a Northwind variant.
+
 ## Build & Run
 
 ```bash
