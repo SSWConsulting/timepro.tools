@@ -39,7 +39,7 @@ public class ScrumCommand : AsyncCommand<ScrumCommand.Settings>
         public bool ForceExternal { get; set; }
 
         [CommandOption("-i|--interactive")]
-        [Description("Show an interactive prompt ([c] copy body, [C] with internal, [q] quit)")]
+        [Description("Show an interactive prompt (r/m/p to copy rich/markdown/plain, q to quit)")]
         public bool Interactive { get; set; }
 
         [CommandOption("--copy")]
