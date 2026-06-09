@@ -13,7 +13,7 @@ public class TimesheetSaveTaxTests : TestBase
     public async Task CreateTimesheet_WhenSalesTaxPctNotSet_LooksUpClientTaxRate()
     {
         WireMock.Given(Request.Create()
-                .WithPath("/api/v2/clients/SSW/taxrates")
+                .WithPath("/api/v2/clients/NWIND/taxrates")
                 .UsingGet())
             .RespondWith(Response.Create()
                 .WithStatusCode(200)
@@ -31,7 +31,7 @@ public class TimesheetSaveTaxTests : TestBase
         var request = new TimesheetRequest
         {
             EmpId = "TST",
-            ClientId = "SSW",
+            ClientId = "NWIND",
             BillableId = "W"
         };
 
@@ -43,14 +43,14 @@ public class TimesheetSaveTaxTests : TestBase
         doc.RootElement.GetProperty("salesTaxPct").GetDecimal().Should().Be(0.1m);
 
         WireMock.LogEntries
-            .Should().Contain(e => e.RequestMessage.AbsolutePath == "/api/v2/clients/SSW/taxrates");
+            .Should().Contain(e => e.RequestMessage.AbsolutePath == "/api/v2/clients/NWIND/taxrates");
     }
 
     [Fact]
     public async Task UpdateTimesheet_WhenSalesTaxPctNotSet_LooksUpClientTaxRate()
     {
         WireMock.Given(Request.Create()
-                .WithPath("/api/v2/clients/LR8R0L/taxrates")
+                .WithPath("/api/v2/clients/NWIND/taxrates")
                 .UsingGet())
             .RespondWith(Response.Create()
                 .WithStatusCode(200)
@@ -66,7 +66,7 @@ public class TimesheetSaveTaxTests : TestBase
         var request = new TimesheetRequest
         {
             EmpId = "TST",
-            ClientId = "LR8R0L",
+            ClientId = "NWIND",
             BillableId = "BPP",
             TimeId = 456
         };
@@ -92,7 +92,7 @@ public class TimesheetSaveTaxTests : TestBase
         var request = new TimesheetRequest
         {
             EmpId = "TST",
-            ClientId = "SSW",
+            ClientId = "NWIND",
             BillableId = "W",
             SalesTaxPct = 0.15m
         };

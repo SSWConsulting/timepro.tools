@@ -149,7 +149,7 @@ tp ts get 2026-03-12       # Specific date
 | `tp client outstanding` | Clients with unbilled time |
 | `tp unbilled list --client ID` | Unbilled timesheets for a client |
 | `tp recurring list / get` | Recurring invoice templates |
-| `tp prepaid status INVOICE_ID` | Prepaid drawdown status PDF |
+| `tp prepaid summary / status INVOICE_ID` | Prepaid drawdown totals / PDF report |
 
 All read commands support `--json` for machine-readable output. All write commands support `--yes` to skip confirmation prompts.
 

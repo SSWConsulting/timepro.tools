@@ -54,6 +54,7 @@ public interface ITimeProApiClient
     Task<List<InvoiceTimesheet>> GetInvoiceTimesheetsAsync(int invoiceId, string type, CancellationToken ct = default);
     Task<List<ReceiptRow>> GetInvoiceReceiptsAsync(int invoiceId, CancellationToken ct = default);
     Task<List<InvoiceHeader>> GetInvoicesByClientAsync(string clientId, CancellationToken ct = default);
+    Task<ClientInvoiceTable?> GetClientInvoiceTableByClientAsync(string clientId, CancellationToken ct = default);
     Task<List<InvoiceHeader>> GetUnpaidInvoicesByClientAsync(string clientId, CancellationToken ct = default);
 
     Task<PagedResponse<ReceiptRow>?> ListPaidReceiptsAsync(string? searchText, int skip, int limit, string field, string dir, CancellationToken ct = default);
@@ -75,6 +76,7 @@ public interface ITimeProApiClient
     Task<RecurringInvoiceDetail?> GetRecurringInvoiceAsync(int invoiceId, CancellationToken ct = default);
 
     Task<byte[]> GetPrepaidStatusReportPdfAsync(int invoiceId, int templateId, CancellationToken ct = default);
+    Task<PrepaidStatusSummary?> GetPrepaidStatusSummaryAsync(int invoiceId, CancellationToken ct = default);
 }
 
 /// <summary>
@@ -372,6 +374,12 @@ public class TimeProApiClient : ITimeProApiClient
         return await GetAsync<List<InvoiceHeader>>(url, ct) ?? [];
     }
 
+    public async Task<ClientInvoiceTable?> GetClientInvoiceTableByClientAsync(string clientId, CancellationToken ct = default)
+    {
+        var url = $"/api/ClientInvoice/GetByClientId/{Uri.EscapeDataString(clientId)}?sortField=invoiceid&direction=desc&outstandingOnly=false&withCreditNotes=false";
+        return await GetAsync<ClientInvoiceTable>(url, ct);
+    }
+
     public async Task<List<InvoiceHeader>> GetUnpaidInvoicesByClientAsync(string clientId, CancellationToken ct = default)
     {
         var url = $"/api/ClientInvoice/UnpaidByClientID/{Uri.EscapeDataString(clientId)}";
@@ -505,6 +513,120 @@ public class TimeProApiClient : ITimeProApiClient
     {
         return await GetBytesAsync(
             $"/Reporting/GetPrepaidStatusReport?invoiceId={invoiceId}&templateId={templateId}", ct);
+    }
+
+    public async Task<PrepaidStatusSummary?> GetPrepaidStatusSummaryAsync(int invoiceId, CancellationToken ct = default)
+    {
+        var invoice = await GetInvoiceAsync(invoiceId, ct);
+        if (invoice is null)
+        {
+            return null;
+        }
+
+        var allocatedTimesheets = await GetInvoiceTimesheetsAsync(invoiceId, "allocated", ct);
+
+        ClientInvoiceTable? invoiceTable = null;
+        List<CreditNoteRow> creditNotes = [];
+        if (!string.IsNullOrWhiteSpace(invoice.ClientId))
+        {
+            invoiceTable = await GetClientInvoiceTableByClientAsync(invoice.ClientId, ct);
+            creditNotes = await GetCreditNotesByClientAsync(invoice.ClientId, ct);
+        }
+
+        var tableInvoice = invoiceTable?.Invoices.FirstOrDefault(i => i.InvoiceId == invoiceId);
+        return BuildPrepaidStatusSummary(invoice, tableInvoice, allocatedTimesheets, creditNotes);
+    }
+
+    private static PrepaidStatusSummary BuildPrepaidStatusSummary(
+        InvoiceHeader invoice,
+        InvoiceHeader? tableInvoice,
+        List<InvoiceTimesheet> allocatedTimesheets,
+        List<CreditNoteRow> creditNotes)
+    {
+        const int financeRoundingDecimal = 3;
+        const string prepaidBillableType = "BPP";
+
+        decimal Round(decimal value) =>
+            Math.Round(value, financeRoundingDecimal, MidpointRounding.AwayFromZero);
+
+        decimal NormalizeTaxRate(decimal rate) => rate > 1 ? rate / 100 : rate;
+        decimal NormalizeTaxRateFromDouble(double? rate) =>
+            rate is null ? 0 : NormalizeTaxRate((decimal)rate.Value);
+
+        TaxBreakdown Breakdown(decimal exGst, decimal gst) => new()
+        {
+            ExGst = Round(exGst),
+            Gst = Round(gst),
+            IncGst = Round(exGst + gst)
+        };
+
+        var invoiceTaxRate = NormalizeTaxRateFromDouble(invoice.SalesTaxPct);
+        var originalExGst = invoice.SubTotal ?? 0;
+        var originalGst = invoice.SalesTaxAmt ?? Round(originalExGst * invoiceTaxRate);
+        var originalIncGst = invoice.SellTotal ?? Round(originalExGst + originalGst);
+        var original = new TaxBreakdown
+        {
+            ExGst = Round(originalExGst),
+            Gst = Round(originalGst),
+            IncGst = Round(originalIncGst)
+        };
+
+        var drawdownTimesheets = allocatedTimesheets
+            .Where(t => string.Equals(t.BillableId, prepaidBillableType, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        var drawnDownExGst = drawdownTimesheets.Sum(t => t.SellTotal ?? t.BillableAmount ?? t.Amount ?? 0);
+        var drawnDownGst = drawdownTimesheets.Sum(t =>
+        {
+            var exGst = t.SellTotal ?? t.BillableAmount ?? t.Amount ?? 0;
+            var taxRate = NormalizeTaxRateFromDouble(t.SalesTaxPct) == 0
+                ? invoiceTaxRate
+                : NormalizeTaxRateFromDouble(t.SalesTaxPct);
+            return t.SalesTaxAmt ?? Round(exGst * taxRate);
+        });
+        var drawnDown = Breakdown(drawnDownExGst, drawnDownGst);
+
+        var creditingCreditNotes = creditNotes
+            .Where(c => c.IsCreditingInvoice && c.AssociatedInvoiceId == invoice.InvoiceId)
+            .ToList();
+
+        var creditedIncGst = creditingCreditNotes.Sum(c => c.Amount);
+        var creditedExGst = creditingCreditNotes.Sum(c =>
+        {
+            var taxRate = NormalizeTaxRate(c.TaxRate);
+            return taxRate <= -1 ? c.Amount : c.Amount / (1 + taxRate);
+        });
+        var creditedGst = creditedIncGst - creditedExGst;
+        var credited = Breakdown(creditedExGst, creditedGst);
+
+        var calculatedRemainingExGst = Round(original.ExGst - drawnDown.ExGst - credited.ExGst);
+        var calculatedRemainingGst = Round(original.Gst - drawnDown.Gst - credited.Gst);
+        var calculatedRemainingIncGst = Round(original.IncGst - drawnDown.IncGst - credited.IncGst);
+        var remainingExGst = Round(tableInvoice?.RemainingPrepaidCredit ?? calculatedRemainingExGst);
+        var remaining = new TaxBreakdown
+        {
+            ExGst = remainingExGst,
+            Gst = calculatedRemainingGst,
+            IncGst = Round(remainingExGst + calculatedRemainingGst)
+        };
+
+        return new PrepaidStatusSummary
+        {
+            InvoiceId = invoice.InvoiceId,
+            ClientId = invoice.ClientId,
+            InvoiceType = invoice.InvoiceType,
+            CurrencyId = invoice.CurrencyId,
+            ExchangeRate = invoice.ExchangeRate,
+            SalesTaxPct = invoice.SalesTaxPct,
+            Original = original,
+            DrawnDown = drawnDown,
+            Credited = credited,
+            Remaining = remaining,
+            DrawdownTimesheetCount = drawdownTimesheets.Count,
+            CreditingCreditNoteCount = creditingCreditNotes.Count,
+            ReconciliationDeltaExGst = Round(calculatedRemainingExGst - remaining.ExGst),
+            ReconciliationDeltaIncGst = Round(calculatedRemainingIncGst - remaining.IncGst)
+        };
     }
 
     // ───────────────────────── HTTP Helpers ─────────────────────────

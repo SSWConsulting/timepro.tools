@@ -422,7 +422,7 @@ public class CreateCommand : Command<CreateCommand.Settings>
 
         sb.AppendLine("---");
         sb.AppendLine("name: timepro-accounting-cli");
-        sb.AppendLine("description: Explore SSW TimePro financial data via the `tp` CLI (read-only) — invoices with line items, timesheets billed on invoices, credit notes, receipts, sale products, client rates, aged debtors, unbilled time, recurring invoices, prepaid drawdown PDFs. Use when the user asks accountant-style questions. For raw HTTP/curl access (when `tp` isn't installed), use the `timepro-accounting` skill instead.");
+        sb.AppendLine("description: Explore SSW TimePro financial data via the `tp` CLI (read-only) — invoices with line items, timesheets billed on invoices, credit notes, receipts, sale products, client rates, aged debtors, unbilled time, recurring invoices, prepaid drawdown summaries and PDFs. Use when the user asks accountant-style questions. For raw HTTP/curl access (when `tp` isn't installed), use the `timepro-accounting` skill instead.");
         sb.AppendLine("user_invocable: true");
         sb.AppendLine("---");
         sb.AppendLine();
@@ -450,7 +450,7 @@ public class CreateCommand : Command<CreateCommand.Settings>
         sb.AppendLine("```bash");
         sb.AppendLine("# Invoices");
         sb.AppendLine("tp invoice list --limit 50 --json");
-        sb.AppendLine("tp invoice list --query acme --field DateCreated --dir desc --json");
+        sb.AppendLine("tp invoice list --query Northwind --field DateCreated --dir desc --json");
         sb.AppendLine("tp invoice get <INV>");
         sb.AppendLine("tp invoice lines <INV>         # line items (products billed)");
         sb.AppendLine("tp invoice timesheets <INV>    # timesheets allocated to the invoice");
@@ -478,7 +478,8 @@ public class CreateCommand : Command<CreateCommand.Settings>
         sb.AppendLine("tp recurring list --client <CLIENT_ID> --json");
         sb.AppendLine("tp recurring get <ID>");
         sb.AppendLine();
-        sb.AppendLine("# Prepaid drawdown (PDF only — row-level data not exposed via JSON API today)");
+        sb.AppendLine("# Prepaid drawdown");
+        sb.AppendLine("tp prepaid summary <INVOICE_ID> --json   # structured original/drawn-down/credited/remaining totals");
         sb.AppendLine("tp prepaid status <INVOICE_ID> --output /tmp/prepaid.pdf");
         sb.AppendLine();
         sb.AppendLine("# Cross-employee/client/project timesheet query (powerful for audits)");
@@ -491,7 +492,7 @@ public class CreateCommand : Command<CreateCommand.Settings>
         sb.AppendLine("### 1. Drill into an invoice (header + lines + timesheets + receipts)");
         sb.AppendLine();
         sb.AppendLine("```bash");
-        sb.AppendLine("INV=19145");
+        sb.AppendLine("INV=142");
         sb.AppendLine("tp invoice get $INV --json          > /tmp/inv_header.json");
         sb.AppendLine("tp invoice lines $INV --json        > /tmp/inv_lines.json");
         sb.AppendLine("tp invoice timesheets $INV --json   > /tmp/inv_ts.json");
@@ -519,21 +520,21 @@ public class CreateCommand : Command<CreateCommand.Settings>
         sb.AppendLine("### 4. Aged debtors for one client");
         sb.AppendLine();
         sb.AppendLine("```bash");
-        sb.AppendLine("tp receipt outstanding LR8R0L        # human table");
-        sb.AppendLine("tp receipt outstanding LR8R0L --json # for further processing");
+        sb.AppendLine("tp receipt outstanding NWIND         # human table");
+        sb.AppendLine("tp receipt outstanding NWIND --json  # for further processing");
         sb.AppendLine("```");
         sb.AppendLine();
         sb.AppendLine("### 5. Unbilled revenue in the pipeline");
         sb.AppendLine();
         sb.AppendLine("```bash");
         sb.AppendLine("tp client outstanding --json          # list all clients with unbilled time");
-        sb.AppendLine("tp unbilled list --client LR8R0L --json");
+        sb.AppendLine("tp unbilled list --client NWIND --json");
         sb.AppendLine("```");
         sb.AppendLine();
         sb.AppendLine("### 6. Credit-note audit");
         sb.AppendLine();
         sb.AppendLine("```bash");
-        sb.AppendLine("tp creditnote list --client LR8R0L --json \\");
+        sb.AppendLine("tp creditnote list --client NWIND --json \\");
         sb.AppendLine("  | jq 'sort_by(.creditNoteDate) | map({id, date: .creditNoteDate, amount, note})'");
         sb.AppendLine("```");
         sb.AppendLine();
@@ -550,8 +551,8 @@ public class CreateCommand : Command<CreateCommand.Settings>
         sb.AppendLine("  bank rec period; flag any receipts in one system but not the other, or amount");
         sb.AppendLine("  mismatches (>$0.01) by invoice reference.\"*");
         sb.AppendLine();
-        sb.AppendLine("- *\"For prepaid invoice 19145, compare the TimePro prepaid status PDF");
-        sb.AppendLine("  (`GetPrepaidStatusPdf`) against Xero manual journals tagged with that invoice.");
+        sb.AppendLine("- *\"For prepaid invoice 142, compare `tp prepaid summary 142 --json`");
+        sb.AppendLine("  `remaining.exGst` against Xero manual journals tagged with that invoice.");
         sb.AppendLine("  Sanity-check that drawdown entries in TimePro net to the Xero journal totals.\"*");
         sb.AppendLine();
         sb.AppendLine("- *\"List TimePro invoices where `externalSyncStatus != 1`; for each, check whether");

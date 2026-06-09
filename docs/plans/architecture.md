@@ -117,6 +117,7 @@ SSW.TimePro.Timesheets.Cli/
 │       │   │   ├── ListCommand.cs              # tp recurring list
 │       │   │   └── GetCommand.cs               # tp recurring get <ID>
 │       │   ├── Prepaid/
+│       │   │   ├── SummaryCommand.cs           # tp prepaid summary <INV> [--json]
 │       │   │   └── StatusCommand.cs            # tp prepaid status <INV> (PDF)
 │       │   ├── Unbilled/
 │       │   │   └── ListCommand.cs              # tp unbilled list --client <ID>

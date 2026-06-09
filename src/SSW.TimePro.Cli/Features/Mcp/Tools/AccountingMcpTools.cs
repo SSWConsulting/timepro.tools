@@ -382,10 +382,23 @@ public class AccountingMcpTools
         return JsonSerializer.Serialize(rows, JsonOpts);
     }
 
-    // ─── Prepaid (PDF → base64 in JSON wrapper) ─────────────────────────────
+    // ─── Prepaid ────────────────────────────────────────────────────────────
 
     [McpServerTool]
-    [Description("Download the prepaid drawdown status report PDF for an invoice. Returns base64-encoded bytes inside a JSON envelope — decode on the client side to save as .pdf. The row-level drawdown details aren't otherwise exposed via JSON.")]
+    [Description("Get structured prepaid drawdown totals for an invoice: original, drawnDown, credited, and remaining amounts split into exGst/gst/incGst. remaining.exGst is sourced from the existing client invoice table endpoint's ledger-backed RemainingPrepaidCredit.")]
+    public async Task<string> GetPrepaidStatus(
+        [Description("Prepaid invoice ID")] int invoiceId,
+        CancellationToken ct = default)
+    {
+        if (NotAuthed(out var err)) return err;
+        var summary = await _api.GetPrepaidStatusSummaryAsync(invoiceId, ct);
+        return summary is null
+            ? $$"""{"error":"Invoice {{invoiceId}} not found."}"""
+            : JsonSerializer.Serialize(summary, JsonOpts);
+    }
+
+    [McpServerTool]
+    [Description("Download the prepaid drawdown status report PDF for an invoice. Returns base64-encoded bytes inside a JSON envelope — decode on the client side to save as .pdf. Prefer GetPrepaidStatus for structured totals.")]
     public async Task<string> GetPrepaidStatusPdf(
         [Description("Prepaid invoice ID")] int invoiceId,
         [Description("Report template ID (0 = tenant default)")] int templateId = 0,

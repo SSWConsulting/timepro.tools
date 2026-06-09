@@ -32,6 +32,7 @@ using ProductDiscounts = SSW.TimePro.Cli.Features.Products.DiscountsCommand;
 using RecurringList = SSW.TimePro.Cli.Features.Recurring.ListCommand;
 using RecurringGet = SSW.TimePro.Cli.Features.Recurring.GetCommand;
 using PrepaidStatus = SSW.TimePro.Cli.Features.Prepaid.StatusCommand;
+using PrepaidSummary = SSW.TimePro.Cli.Features.Prepaid.SummaryCommand;
 using UnbilledList = SSW.TimePro.Cli.Features.Unbilled.ListCommand;
 using LocationInfo = SSW.TimePro.Cli.Features.Location.InfoCommand;
 using LocationSet = SSW.TimePro.Cli.Features.Location.SetCommand;
@@ -366,6 +367,8 @@ app.Configure(config =>
     config.AddBranch("prepaid", pp =>
     {
         pp.SetDescription("Prepaid drawdown reports");
+        pp.AddCommand<PrepaidSummary>("summary")
+            .WithDescription("Show structured prepaid drawdown totals for an invoice");
         pp.AddCommand<PrepaidStatus>("status")
             .WithDescription("Download the prepaid drawdown status PDF for an invoice");
     });

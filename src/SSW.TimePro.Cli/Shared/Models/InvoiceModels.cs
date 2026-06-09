@@ -68,6 +68,7 @@ public class InvoiceHeader
     public int PaymentTerms { get; set; }
     public bool IsCreditNote { get; set; }
     public DateTime? CreditNoteDate { get; set; }
+    public decimal? RemainingPrepaidCredit { get; set; }
 }
 
 /// <summary>
@@ -125,6 +126,51 @@ public class InvoiceTimesheet
     public decimal? Amount { get; set; }
     public decimal? BillableAmount { get; set; }
     public decimal? SellPrice { get; set; }
+    public decimal? SellTotal { get; set; }
+    public decimal? SalesTaxAmt { get; set; }
+    public double? SalesTaxPct { get; set; }
     public string? Notes { get; set; }
     public int? InvoiceId { get; set; }
+}
+
+/// <summary>
+/// Client invoice table response from /api/ClientInvoice/GetByClientId/{clientId}.
+/// </summary>
+public class ClientInvoiceTable
+{
+    public List<InvoiceHeader> Invoices { get; set; } = [];
+    public int Total { get; set; }
+}
+
+/// <summary>
+/// Money split into ex-GST, GST, and inc-GST components.
+/// </summary>
+public class TaxBreakdown
+{
+    public decimal ExGst { get; set; }
+    public decimal Gst { get; set; }
+    public decimal IncGst { get; set; }
+}
+
+/// <summary>
+/// Structured prepaid drawdown summary composed from existing invoice, timesheet,
+/// credit note, and client invoice table endpoints.
+/// </summary>
+public class PrepaidStatusSummary
+{
+    public int InvoiceId { get; set; }
+    public string? ClientId { get; set; }
+    public string? InvoiceType { get; set; }
+    public string? CurrencyId { get; set; }
+    public double? ExchangeRate { get; set; }
+    public double? SalesTaxPct { get; set; }
+    public TaxBreakdown Original { get; set; } = new();
+    public TaxBreakdown DrawnDown { get; set; } = new();
+    public TaxBreakdown Credited { get; set; } = new();
+    public TaxBreakdown Remaining { get; set; } = new();
+    public int DrawdownTimesheetCount { get; set; }
+    public int CreditingCreditNoteCount { get; set; }
+    public decimal ReconciliationDeltaExGst { get; set; }
+    public decimal ReconciliationDeltaIncGst { get; set; }
+    public string RemainingExGstSource { get; set; } = "api/ClientInvoice/GetByClientId/{clientId}.remainingPrepaidCredit";
 }

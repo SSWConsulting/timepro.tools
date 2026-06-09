@@ -23,7 +23,7 @@ All commands accept `--json` for machine-readable output.
 
 ```bash
 tp invoice list                              # paged list (default 50 rows)
-tp invoice list --query acme --limit 200     # filter + larger page
+tp invoice list --query Northwind --limit 200 # filter + larger page
 tp invoice list --field DateCreated --dir desc
 tp invoice list --recurring                  # only recurring-generated invoices
 
@@ -40,7 +40,7 @@ Paging flags on `list`: `--skip N`, `--limit N`, `--field COL`, `--dir asc|desc`
 
 ```bash
 tp receipt list                              # paid receipts, paged
-tp receipt list --search "ACME" --limit 500
+tp receipt list --search "Northwind" --limit 500
 tp receipt list --field PaymentDate --dir desc
 
 tp receipt get <RECEIPT_ID>                  # detail + invoice allocations
@@ -92,21 +92,24 @@ tp recurring get <RECURRING_ID>              # details + product lines
 ### Prepaid drawdown — `tp prepaid`
 
 ```bash
+tp prepaid summary <INVOICE_ID> --json       # structured drawdown totals
 tp prepaid status <INVOICE_ID>               # writes prepaid-<id>.pdf in cwd
 tp prepaid status <INVOICE_ID> --output /tmp/prepaid.pdf
 tp prepaid status <INVOICE_ID> --template <TEMPLATE_ID>
 ```
 
-The TimePro API today only exposes prepaid drawdown as a rendered PDF report.
-Row-level drawdown records are not available via JSON; the PDF is the
-authoritative per-invoice view.
+`tp prepaid summary` composes existing read-only endpoints and returns
+`exGst`, `gst`, and `incGst` totals for `original`, `drawnDown`, `credited`,
+and `remaining`. The `remaining.exGst` value is sourced from the ledger-backed
+`remainingPrepaidCredit` exposed by the client invoice table endpoint. The PDF
+command remains available when the rendered report is needed.
 
 ## Common workflows
 
 ### 1. Drill into an invoice
 
 ```bash
-INV=19145
+INV=142
 tp invoice get $INV --json         > /tmp/inv_header.json
 tp invoice lines $INV --json       > /tmp/inv_lines.json
 tp invoice timesheets $INV --json  > /tmp/inv_ts.json
@@ -136,21 +139,21 @@ tp receipt list --limit 500 --field PaymentDate --dir desc --json \
 ### 4. Aged debtors for one client
 
 ```bash
-tp receipt outstanding LR8R0L          # human table
-tp receipt outstanding LR8R0L --json   # further processing
+tp receipt outstanding NWIND           # human table
+tp receipt outstanding NWIND --json    # further processing
 ```
 
 ### 5. Unbilled revenue
 
 ```bash
 tp client outstanding --json           # all clients with unbilled time
-tp unbilled list --client LR8R0L --json
+tp unbilled list --client NWIND --json
 ```
 
 ### 6. Credit-note audit
 
 ```bash
-tp creditnote list --client LR8R0L --json \
+tp creditnote list --client NWIND --json \
   | jq 'sort_by(.creditNoteDate) | map({id, date: .creditNoteDate, amount, note})'
 ```
 
@@ -175,7 +178,8 @@ Accounting tool names (complete list):
 - Rates / outstanding: `ListClientRates`, `GetClientsWithOutstandingTime`,
   `GetUnbilledTimesheetsForClient`
 - Recurring: `ListRecurringInvoices`, `GetRecurringInvoice`
-- Prepaid: `GetPrepaidStatusPdf` (base64-wrapped PDF)
+- Prepaid: `GetPrepaidStatus` (structured JSON),
+  `GetPrepaidStatusPdf` (base64-wrapped PDF)
 - Cross-domain: `QueryTimesheets`, `GetCurrentUser`, `ListCategories`,
   `ListBillableTypes`, `ListLocations`, `GetProjectsSummary`
 
@@ -195,9 +199,9 @@ tools from both:
   rec for the same period; flag any receipts in one system but not the other,
   or amount mismatches >$0.01 keyed on invoice reference."*
 
-- *"For prepaid invoice 19145, pull the TimePro prepaid status PDF
-  (`GetPrepaidStatusPdf`), then list Xero manual journals tagged with that
-  invoice — confirm the drawdown entries net to the Xero journal totals."*
+- *"For prepaid invoice 142, call `GetPrepaidStatus` and compare
+  `remaining.exGst` against Xero manual journals tagged with that invoice.
+  Confirm the drawdown entries net to the Xero journal totals."*
 
 - *"Find TimePro invoices where `externalSyncStatus != 1`; for each, check
   whether a matching invoice exists in Xero. Report what's missing."*
