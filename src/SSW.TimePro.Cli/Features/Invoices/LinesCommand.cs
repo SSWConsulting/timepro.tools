@@ -70,7 +70,7 @@ public class LinesCommand : AsyncCommand<LinesCommand.Settings>
                         $"${l.Margin:N2}");
                 }
                 AnsiConsole.Write(table);
-                AnsiConsole.MarkupLine($"[dim]Sum of line sell totals: [/][bold]${totalSell:N2}[/] [dim](ex-GST; compare to invoice header Sell total)[/]");
+                AnsiConsole.MarkupLine($"[dim]Sum of line sell totals: [/][bold]${totalSell:N2}[/] [dim](ex-GST; compare to invoice header Sub total)[/]");
             });
 
             return 0;

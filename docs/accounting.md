@@ -116,9 +116,10 @@ tp invoice timesheets $INV --json  > /tmp/inv_ts.json
 tp invoice receipts $INV --json    > /tmp/inv_receipts.json
 ```
 
-Reconciliation: sum of line `sellTotal` should equal invoice header `sellTotal`;
-sum of `abs(paidTotal)` on receipts should equal header `paidAmt`; header `osAmt`
-should equal total minus paid.
+Reconciliation: sum of line `sellTotal` should equal invoice header `subTotal`
+(ex-GST); `subTotal + salesTaxAmt` should equal header `sellTotal` (inc-GST);
+sum of `abs(paidTotal)` on receipts should equal header `paidAmt`; header
+`osAmt` should equal total minus paid.
 
 ### 2. Monthly invoiced sales
 
@@ -241,8 +242,11 @@ name collision even if you drop the generated file into `~/.claude/skills/`.
   order and page, then filter client-side with `jq` or Python.
 - **Paging**: `tp invoice list` and `tp receipt list` default to limit 50/100.
   Raise `--limit` or walk `--skip` when covering full months.
-- **GST**: Invoice header totals are GST-**inclusive**; line `sellAmt × qty`
-  is GST-**exclusive**. Check `salesTaxPct` on the header when reconciling.
+- **GST**: Invoice header `subTotal` is GST-**exclusive**, `salesTaxAmt` is the
+  GST component, and `sellTotal` is GST-**inclusive**. Invoice line `sellAmt`
+  and `sellTotal` are GST-exclusive. Timesheet `sellTotal`, `billableAmount`,
+  and `amount` are treated as GST-exclusive for reconciliation; use
+  `salesTaxAmt` / `salesTaxPct` when present, or the invoice header rate.
 - **Credit notes** are negative-signed adjustments. Decide whether to net
   them off or report separately before presenting a number.
 - **Write-offs**: Timesheets allocated to an invoice may be written off.

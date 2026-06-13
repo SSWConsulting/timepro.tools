@@ -10,6 +10,9 @@ public class InvoiceSearchRow
     public string? InvoiceType { get; set; }
     public string? ClientId { get; set; }
     public string? CoName { get; set; }
+    /// <summary>
+    /// Invoice total including GST.
+    /// </summary>
     public decimal SellTotal { get; set; }
     public decimal PaidAmt { get; set; }
     public string? ExternalSyncId { get; set; }
@@ -37,9 +40,21 @@ public class InvoiceHeader
     public string? ClientRef { get; set; }
     public DateTime? DateStart { get; set; }
     public DateTime? DateEnd { get; set; }
+    /// <summary>
+    /// Invoice subtotal before GST.
+    /// </summary>
     public decimal? SubTotal { get; set; }
+    /// <summary>
+    /// Invoice total including GST. Usually equals <see cref="SubTotal"/> plus <see cref="SalesTaxAmt"/>.
+    /// </summary>
     public decimal? SellTotal { get; set; }
+    /// <summary>
+    /// GST rate as returned by the API. Calculation code should normalize because API payloads may use either 0.1 or 10 for 10%.
+    /// </summary>
     public double? SalesTaxPct { get; set; }
+    /// <summary>
+    /// GST component of the invoice total.
+    /// </summary>
     public decimal? SalesTaxAmt { get; set; }
     public decimal? CostTotal { get; set; }
     public decimal? Margin { get; set; }
@@ -68,6 +83,9 @@ public class InvoiceHeader
     public int PaymentTerms { get; set; }
     public bool IsCreditNote { get; set; }
     public DateTime? CreditNoteDate { get; set; }
+    /// <summary>
+    /// Ledger-backed remaining prepaid credit, excluding GST. Populated by the client invoice table endpoint for prepaid invoices.
+    /// </summary>
     public decimal? RemainingPrepaidCredit { get; set; }
 }
 
@@ -86,7 +104,13 @@ public class InvoiceLine
     public string? AccountId { get; set; }
     public string? EmpId { get; set; }
     public double? Qty { get; set; }
+    /// <summary>
+    /// Unit sell price before GST.
+    /// </summary>
     public decimal? SellAmt { get; set; }
+    /// <summary>
+    /// Line sell total before GST, usually <see cref="Qty"/> multiplied by <see cref="SellAmt"/>.
+    /// </summary>
     public decimal? SellTotal { get; set; }
     public decimal? CostAmt { get; set; }
     public decimal? CostTotal { get; set; }
@@ -94,7 +118,13 @@ public class InvoiceLine
     public double? MarginPct { get; set; }
     public decimal? RrpAmt { get; set; }
     public decimal? RrpTotal { get; set; }
+    /// <summary>
+    /// GST component for this line when returned by the API.
+    /// </summary>
     public decimal? SalesTaxAmt { get; set; }
+    /// <summary>
+    /// GST rate for this line. Calculation code should normalize because API payloads may use either 0.1 or 10 for 10%.
+    /// </summary>
     public double? SalesTaxPct { get; set; }
     public decimal? DiscountPct { get; set; }
     public string? Note { get; set; }
@@ -123,11 +153,29 @@ public class InvoiceTimesheet
     public string? TimeStart { get; set; }
     public string? TimeEnd { get; set; }
     public decimal? TotalTime { get; set; }
+    /// <summary>
+    /// Raw timesheet amount before GST. Used as a fallback when billable/sell totals are absent.
+    /// </summary>
     public decimal? Amount { get; set; }
+    /// <summary>
+    /// Billable timesheet amount before GST.
+    /// </summary>
     public decimal? BillableAmount { get; set; }
+    /// <summary>
+    /// Hourly sell price before GST.
+    /// </summary>
     public decimal? SellPrice { get; set; }
+    /// <summary>
+    /// Allocated sell total before GST. Preferred for prepaid drawdown calculations when present.
+    /// </summary>
     public decimal? SellTotal { get; set; }
+    /// <summary>
+    /// GST component for this timesheet allocation when returned by the API.
+    /// </summary>
     public decimal? SalesTaxAmt { get; set; }
+    /// <summary>
+    /// GST rate for this timesheet allocation. Calculation code should normalize because API payloads may use either 0.1 or 10 for 10%.
+    /// </summary>
     public double? SalesTaxPct { get; set; }
     public string? Notes { get; set; }
     public int? InvoiceId { get; set; }
@@ -147,8 +195,17 @@ public class ClientInvoiceTable
 /// </summary>
 public class TaxBreakdown
 {
+    /// <summary>
+    /// Amount before GST.
+    /// </summary>
     public decimal ExGst { get; set; }
+    /// <summary>
+    /// GST component.
+    /// </summary>
     public decimal Gst { get; set; }
+    /// <summary>
+    /// Amount including GST.
+    /// </summary>
     public decimal IncGst { get; set; }
 }
 
@@ -163,10 +220,25 @@ public class PrepaidStatusSummary
     public string? InvoiceType { get; set; }
     public string? CurrencyId { get; set; }
     public double? ExchangeRate { get; set; }
+    /// <summary>
+    /// GST rate from the invoice header. Calculation code normalizes 0.1 and 10 as 10%.
+    /// </summary>
     public double? SalesTaxPct { get; set; }
+    /// <summary>
+    /// Original prepaid invoice total split into ex-GST, GST, and inc-GST components.
+    /// </summary>
     public TaxBreakdown Original { get; set; } = new();
+    /// <summary>
+    /// Prepaid drawdown from allocated BPP timesheets, split into ex-GST, GST, and inc-GST components.
+    /// </summary>
     public TaxBreakdown DrawnDown { get; set; } = new();
+    /// <summary>
+    /// Crediting credit notes applied to the prepaid invoice, split into ex-GST, GST, and inc-GST components.
+    /// </summary>
     public TaxBreakdown Credited { get; set; } = new();
+    /// <summary>
+    /// Remaining prepaid balance split into ex-GST, GST, and inc-GST components.
+    /// </summary>
     public TaxBreakdown Remaining { get; set; } = new();
     public int DrawdownTimesheetCount { get; set; }
     public int CreditingCreditNoteCount { get; set; }

@@ -56,10 +56,10 @@ public class GetCommand : AsyncCommand<GetCommand.Settings>
                 table.AddRow("[bold]Date created[/]", i.DateCreated?.ToString("yyyy-MM-dd") ?? "-");
                 table.AddRow("[bold]Period[/]", $"{i.DateStart:yyyy-MM-dd} - {i.DateEnd:yyyy-MM-dd}");
                 // paidAmt is stored negative (receipt sign convention); display as absolute.
-                // salesTaxPct / marginPct come through as fractions (0.1 = 10%); multiply for display.
-                table.AddRow("[bold]Sub total[/]", $"${i.SubTotal:N2}");
-                table.AddRow("[bold]Sales tax[/]", $"${i.SalesTaxAmt:N2} ({(i.SalesTaxPct ?? 0) * 100:N2}%)");
-                table.AddRow("[bold]Sell total[/]", $"${i.SellTotal:N2}");
+                // marginPct comes through as a fraction (0.1 = 10%); salesTaxPct varies by endpoint.
+                table.AddRow("[bold]Sub total (ex GST)[/]", $"${i.SubTotal:N2}");
+                table.AddRow("[bold]Sales tax[/]", $"${i.SalesTaxAmt:N2} ({TaxRatePercent(i.SalesTaxPct):N2}%)");
+                table.AddRow("[bold]Sell total (inc GST)[/]", $"${i.SellTotal:N2}");
                 table.AddRow("[bold]Paid[/]", $"${Math.Abs(i.PaidAmt ?? 0):N2}");
                 table.AddRow("[bold]Outstanding[/]", $"${i.OSAmt:N2}");
                 table.AddRow("[bold]Cost total[/]", $"${i.CostTotal:N2}");
@@ -82,5 +82,11 @@ public class GetCommand : AsyncCommand<GetCommand.Settings>
             OutputHelper.WriteError($"API error ({ex.StatusCode}): {ex.Message}");
             return 1;
         }
+    }
+
+    private static double TaxRatePercent(double? salesTaxPct)
+    {
+        var rate = salesTaxPct ?? 0;
+        return rate > 1 ? rate : rate * 100;
     }
 }

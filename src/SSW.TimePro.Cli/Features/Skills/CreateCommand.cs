@@ -499,8 +499,9 @@ public class CreateCommand : Command<CreateCommand.Settings>
         sb.AppendLine("tp invoice receipts $INV --json     > /tmp/inv_receipts.json");
         sb.AppendLine("```");
         sb.AppendLine();
-        sb.AppendLine("Reconcile: sum of line `sellTotal` = invoice header `sellTotal`; sum of");
-        sb.AppendLine("`abs(paidTotal)` on receipts = header `paidAmt`; header `osAmt` = total − paid.");
+        sb.AppendLine("Reconcile: sum of line `sellTotal` = invoice header `subTotal` (ex-GST);");
+        sb.AppendLine("`subTotal + salesTaxAmt` = header `sellTotal` (inc-GST); sum of");
+        sb.AppendLine("`abs(paidTotal)` on receipts = header `paidAmt`; header `osAmt` = total - paid.");
         sb.AppendLine();
         sb.AppendLine("### 2. Monthly invoiced sales");
         sb.AppendLine();
@@ -578,9 +579,12 @@ public class CreateCommand : Command<CreateCommand.Settings>
         sb.AppendLine("  fetch by sort + page and filter client-side with `jq`.");
         sb.AppendLine("- **Paging**: `tp invoice list` and `tp receipt list` default to limit 50/100 —");
         sb.AppendLine("  raise to 500 or walk `--skip` when covering full months.");
-        sb.AppendLine("- **GST**: Invoice header totals are GST-**inclusive**; line `sellAmt × qty` is");
-        sb.AppendLine("  GST-**exclusive**. Check `salesTaxPct` on the header when reconciling against");
-        sb.AppendLine("  an ex-GST SQL figure.");
+        sb.AppendLine("- **GST**: Invoice header `subTotal` is GST-**exclusive**, `salesTaxAmt` is");
+        sb.AppendLine("  the GST component, and `sellTotal` is GST-**inclusive**. Invoice line");
+        sb.AppendLine("  `sellAmt` and `sellTotal` are GST-exclusive. Timesheet `sellTotal`,");
+        sb.AppendLine("  `billableAmount`, and `amount` are treated as GST-exclusive for");
+        sb.AppendLine("  reconciliation; use `salesTaxAmt` / `salesTaxPct` when present, or the");
+        sb.AppendLine("  invoice header rate.");
         sb.AppendLine("- **Credit notes** appear as negative-signed adjustments. Decide whether to net");
         sb.AppendLine("  them off sales or report separately before presenting a number.");
         sb.AppendLine("- **Write-offs**: Timesheets allocated to an invoice may be written off. Pass");

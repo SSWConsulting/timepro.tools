@@ -63,7 +63,7 @@ public class AccountingMcpTools
     // ─── Invoices ───────────────────────────────────────────────────────────
 
     [McpServerTool]
-    [Description("List invoices (paged). Filter by query text, sort by DateCreated/DateInvoiced/SellTotal/ClientID. Set onlyRecurring=true for recurring-generated invoices.")]
+    [Description("List invoices (paged). Filter by query text, sort by DateCreated/DateInvoiced/SellTotal/ClientID. SellTotal is GST-inclusive. Set onlyRecurring=true for recurring-generated invoices.")]
     public async Task<string> ListInvoices(
         [Description("Free-text search (client name, invoice id)")] string? query = null,
         [Description("Rows to skip (default 0)")] int skip = 0,
@@ -79,7 +79,7 @@ public class AccountingMcpTools
     }
 
     [McpServerTool]
-    [Description("Get a single invoice header: totals, paid amount, outstanding, GST, margin, external sync status.")]
+    [Description("Get a single invoice header. GST convention: SubTotal is ex-GST, SalesTaxAmt is GST, SellTotal is inc-GST; SalesTaxPct is the raw API tax rate and should be normalized before calculations.")]
     public async Task<string> GetInvoice(
         [Description("Invoice ID")] int invoiceId,
         CancellationToken ct = default)
@@ -90,7 +90,7 @@ public class AccountingMcpTools
     }
 
     [McpServerTool]
-    [Description("List line items (products) on an invoice.")]
+    [Description("List line items (products) on an invoice. SellAmt and SellTotal are ex-GST; SalesTaxAmt is the GST component when returned.")]
     public async Task<string> GetInvoiceLines(
         [Description("Invoice ID")] int invoiceId,
         CancellationToken ct = default)
@@ -101,7 +101,7 @@ public class AccountingMcpTools
     }
 
     [McpServerTool]
-    [Description("List timesheets billed on an invoice. Set type='writeoff' for written-off timesheets instead of allocated.")]
+    [Description("List timesheets billed on an invoice. SellTotal, BillableAmount, and Amount are treated as ex-GST; SalesTaxAmt/SalesTaxPct provide the tax component/rate when returned. Set type='writeoff' for written-off timesheets instead of allocated.")]
     public async Task<string> GetInvoiceTimesheets(
         [Description("Invoice ID")] int invoiceId,
         [Description("Either 'allocated' (default) or 'writeoff'")] string type = "allocated",
@@ -124,7 +124,7 @@ public class AccountingMcpTools
     }
 
     [McpServerTool]
-    [Description("List all invoices for a client (full history, unpaged).")]
+    [Description("List all invoices for a client (full history, unpaged). Invoice amount convention: SubTotal ex-GST, SalesTaxAmt GST, SellTotal inc-GST.")]
     public async Task<string> GetInvoicesByClient(
         [Description("Client ID")] string clientId,
         CancellationToken ct = default)
@@ -135,7 +135,7 @@ public class AccountingMcpTools
     }
 
     [McpServerTool]
-    [Description("List unpaid invoices for a client.")]
+    [Description("List unpaid invoices for a client. Invoice amount convention: SubTotal ex-GST, SalesTaxAmt GST, SellTotal inc-GST.")]
     public async Task<string> GetUnpaidInvoicesByClient(
         [Description("Client ID")] string clientId,
         CancellationToken ct = default)
@@ -273,7 +273,7 @@ public class AccountingMcpTools
     }
 
     [McpServerTool]
-    [Description("List unbilled (unallocated) timesheets for a client — revenue still in the pipeline.")]
+    [Description("List unbilled (unallocated) timesheets for a client - revenue still in the pipeline. SellTotal, BillableAmount, and Amount are treated as ex-GST.")]
     public async Task<string> GetUnbilledTimesheetsForClient(
         [Description("Client ID")] string clientId,
         [Description("Page size")] int? pageSize = null,
@@ -320,7 +320,7 @@ public class AccountingMcpTools
     // ─── Cross-domain reads (useful alongside accounting queries) ───────────
 
     [McpServerTool]
-    [Description("Query timesheets across empIds, clients, projects and a date range. Returns detailed rows including hours and sell price — use for audits, billable-hour reconciliation, month-to-month comparisons. employeeIds is accepted as an alias for empIds.")]
+    [Description("Query timesheets across empIds, clients, projects and a date range. Returns detailed rows including hours and sell price; sell prices/amounts are treated as ex-GST for invoice reconciliation. employeeIds is accepted as an alias for empIds.")]
     public async Task<string> QueryTimesheets(
         [Description("Start date (yyyy-MM-dd)")] string startDate,
         [Description("End date (yyyy-MM-dd)")] string endDate,
