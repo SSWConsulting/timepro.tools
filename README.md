@@ -18,7 +18,7 @@ SSW TimePro is a time tracking and invoicing system. This CLI makes it fast to v
 - **Location Defaults** — Set WFH days so location is auto-applied when creating timesheets
 - **CSV Export** — Export timesheets for tax reports or analysis
 - **Skills Generation** — Generate agent skill files with project context and `gh` commands
-- **MCP Server** — Exposes 11 tools for AI agents via stdio transport
+- **MCP Server** — Exposes timesheet, lookup, leave, accounting, and prepaid tools for AI agents via stdio transport
 
 ## Prerequisites
 
@@ -33,8 +33,8 @@ SSW TimePro is a time tracking and invoicing system. This CLI makes it fast to v
 ```bash
 git clone https://github.com/SSWConsulting/timepro.tools.git
 cd timepro.tools
-dotnet pack src/SSW.TimePro.Cli/ -o src/SSW.TimePro.Cli/nupkg
-dotnet tool install -g --add-source src/SSW.TimePro.Cli/nupkg SSW.TimePro.Cli
+dotnet pack src/SSW.TimePro.Cli/ -c Release -o artifacts/nupkg
+dotnet tool install -g --add-source artifacts/nupkg SSW.TimePro.Cli
 ```
 
 This makes the `tp` command available system-wide.
@@ -44,9 +44,9 @@ To update after pulling new changes:
 ```bash
 cd timepro.tools
 git pull
-dotnet pack src/SSW.TimePro.Cli/ -o src/SSW.TimePro.Cli/nupkg
+dotnet pack src/SSW.TimePro.Cli/ -c Release -o artifacts/nupkg
 dotnet tool uninstall -g SSW.TimePro.Cli
-dotnet tool install -g --add-source src/SSW.TimePro.Cli/nupkg SSW.TimePro.Cli
+dotnet tool install -g --add-source artifacts/nupkg SSW.TimePro.Cli
 ```
 
 To uninstall:
@@ -431,21 +431,15 @@ tp blog list --limit 5 --all   # Include former employees
 
 ## MCP Server
 
-The MCP server exposes TimePro data to AI agents via stdio transport.
+The MCP server exposes TimePro data to AI agents via stdio transport. Current tool groups include:
 
-| Tool | Description |
-|------|-------------|
-| `GetTimesheets` | Get timesheets for a date or range |
-| `CreateTimesheet` | Create a new timesheet |
-| `UpdateTimesheet` | Update an existing timesheet |
-| `DeleteTimesheet` | Delete a timesheet |
-| `GetSuggestedTimesheets` | Get suggested timesheets for a date |
-| `AcceptSuggestedTimesheet` | Accept a suggested timesheet |
-| `SearchClients` | Search clients by name |
-| `GetProjectsForClient` | Get projects for a client |
-| `GetClientRate` | Get billing rate with expiry info |
-| `GetCrmBookings` | Get CRM appointments |
-| `GetLocationAndMapping` | Get WFH defaults and repo mapping |
+| Group | Examples |
+|-------|----------|
+| Timesheets | Get, create, update, delete, suggested timesheets, accept suggestions, list iterations |
+| Lookup | Search clients, list projects, get client rate, CRM bookings, location and repo mapping |
+| Leave | List EasyLeave entries, optionally filtered by `empId` |
+| Accounting | Invoices, receipts, credit notes, products/SKUs, client rates, unbilled time, recurring invoices |
+| Reporting | Timesheet queries, current user, categories, billable types, locations, project summaries, prepaid drawdown status |
 
 ### Claude Code
 
@@ -520,6 +514,8 @@ Editable source: [docs/architecture-diagram.excalidraw](docs/architecture-diagra
 
 ```
 timepro.tools/
+├── Directory.Build.props            # Shared .NET project defaults
+├── Directory.Packages.props         # Central NuGet package versions
 ├── src/SSW.TimePro.Cli/
 │   ├── Program.cs                    # Entry point, DI, command tree
 │   ├── Infrastructure/
@@ -545,7 +541,7 @@ timepro.tools/
 │   │   ├── Blogs/                   # latest employee blog posts
 │   │   ├── Skills/                  # create
 │   │   ├── Users/                   # me
-│   │   └── Mcp/                     # MCP server + 11 tools
+│   │   └── Mcp/                     # MCP server + tool groups
 │   └── Shared/Models/               # API DTOs
 ├── tests/
 │   ├── SSW.TimePro.Cli.Tests/       # Unit tests (xUnit + FluentAssertions)
@@ -575,6 +571,9 @@ dotnet test tests/SSW.TimePro.Cli.Integration/
 
 # All tests
 dotnet test
+
+# NuGet package safety audit
+scripts/security/nuget-audit.sh
 
 # E2E (requires staging credentials)
 TIMEPRO_E2E_API_KEY=... ./scripts/e2e/run-all.sh

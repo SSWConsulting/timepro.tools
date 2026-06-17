@@ -16,9 +16,11 @@ CLI-first tool with MCP support for managing SSW TimePro timesheets. Built with 
 ### CLI Commands
 Each command is a class inheriting `AsyncCommand<TSettings>` from Spectre.Console.Cli:
 - Settings class defines options/arguments
-- `ExecuteAsync` handles the command logic
+- `protected override ExecuteAsync(CommandContext context, TSettings settings, CancellationToken cancellationToken)` handles async command logic
+- `protected override Execute(CommandContext context, TSettings settings, CancellationToken cancellationToken)` handles sync command logic
 - Use `OutputHelper` for `--json` support
 - Always validate config/auth before API calls
+- Thread `cancellationToken` through new API calls where practical
 
 ### API Client
 `TimeProApiClient` is the single HTTP client for all TimePro API calls:
@@ -30,6 +32,11 @@ Each command is a class inheriting `AsyncCommand<TSettings>` from Spectre.Consol
 - Global config: `~/.config/timepro-cli/config.json`
 - Per-tenant: `~/.config/timepro-cli/tenants/{id}.json`
 - Repo mappings: `~/.config/timepro-cli/repo-mappings.json`
+
+### Project Files
+- `Directory.Build.props` centralizes shared .NET defaults (`net10.0`, implicit usings, nullable)
+- `Directory.Packages.props` uses central package management for all NuGet versions
+- Project files should reference packages without inline `Version` attributes unless there is a deliberate local override
 
 ## Commands
 
@@ -110,6 +117,6 @@ dotnet build
 dotnet run --project src/SSW.TimePro.Cli -- ts get --week
 
 # Install as global tool
-dotnet pack src/SSW.TimePro.Cli/
-dotnet tool install -g --add-source src/SSW.TimePro.Cli/nupkg SSW.TimePro.Cli
+dotnet pack src/SSW.TimePro.Cli/ -c Release -o artifacts/nupkg
+dotnet tool install -g --add-source artifacts/nupkg SSW.TimePro.Cli
 ```
