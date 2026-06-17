@@ -1,53 +1,83 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="980" viewBox="0 0 1600 980" role="img" aria-labelledby="title desc">
 <title id="title">Architecture Diagram - TimePro Tools</title>
-<desc id="desc">TimePro Web API at the top. Human users, scripts, CLI, MCP host, and AI agents below. Agents can use the CLI, MCP tools, direct API access when configured, and workspace tools such as files, Git, GitHub, and Azure DevOps.</desc>
-<defs><marker id="arrow" markerWidth="14" markerHeight="14" refX="11" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L12,5 L0,10 z" fill="#111827"/></marker><filter id="paper" x="-5%" y="-5%" width="110%" height="110%"><feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000000" flood-opacity="0.12"/></filter></defs>
-<rect width="1400" height="900" fill="#ffffff"/>
-<text x="700" y="54" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="38" font-weight="700" fill="#111827"><tspan x="700" dy="0">Architecture Diagram - TimePro Tools</tspan></text>
-<text x="700" y="86" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="500" fill="#4b5563"><tspan x="700" dy="0">Primary data flow: TimePro Web API at top, local CLI/MCP and agents below</tspan></text>
-<g filter="url(#paper)"><rect x="420" y="100" width="560" height="125" rx="16" fill="#e8f1ff" stroke="#1f2937" stroke-width="2.2"/></g>
-<g filter="url(#paper)"><rect x="80" y="320" width="780" height="340" rx="5" fill="#f8fafc" stroke="#1f2937" stroke-width="1.6"/></g>
-<g filter="url(#paper)"><rect x="125" y="410" width="190" height="125" rx="16" fill="#fff7ed" stroke="#1f2937" stroke-width="2.2"/></g>
-<g filter="url(#paper)"><rect x="385" y="395" width="215" height="145" rx="16" fill="#ecfeff" stroke="#1f2937" stroke-width="2.2"/></g>
-<g filter="url(#paper)"><rect x="660" y="395" width="170" height="145" rx="16" fill="#f5f3ff" stroke="#1f2937" stroke-width="2.2"/></g>
-<g filter="url(#paper)"><rect x="410" y="575" width="330" height="70" rx="16" fill="#f1f5f9" stroke="#1f2937" stroke-width="2.2"/></g>
-<g filter="url(#paper)"><rect x="910" y="320" width="400" height="340" rx="5" fill="#f8fafc" stroke="#1f2937" stroke-width="1.6"/></g>
-<g filter="url(#paper)"><rect x="955" y="385" width="310" height="120" rx="16" fill="#eef2ff" stroke="#1f2937" stroke-width="2.2"/></g>
-<g filter="url(#paper)"><rect x="955" y="540" width="310" height="95" rx="16" fill="#ecfdf5" stroke="#1f2937" stroke-width="2.2"/></g>
-<g transform="translate(475 128)"><ellipse cx="34" cy="12" rx="34" ry="12" fill="#38bdf8" stroke="#075985" stroke-width="2"/><path d="M0 12 v42 c0 7 15 12 34 12 s34-5 34-12 V12" fill="#0ea5e9" stroke="#075985" stroke-width="2"/><ellipse cx="34" cy="54" rx="34" ry="12" fill="#0284c7" stroke="#075985" stroke-width="2"/></g><g transform="translate(415 422)"><rect x="0" y="0" width="70" height="50" rx="7" fill="#111827" stroke="#0f172a" stroke-width="2"/><text x="14" y="31" font-family="monospace" font-size="20" font-weight="700" fill="#67e8f9">&gt;_</text></g><g transform="translate(690 424)" fill="none" stroke="#7c3aed" stroke-width="5" stroke-linecap="round"><path d="M10 22 h48"/><path d="M21 22 v-16"/><path d="M47 22 v-16"/><path d="M34 22 v34"/><circle cx="34" cy="62" r="8" fill="#ede9fe"/></g><g transform="translate(985 411)" fill="none" stroke="#4f46e5" stroke-width="3"><circle cx="38" cy="24" r="19" fill="#eef2ff"/><circle cx="18" cy="58" r="16" fill="#eef2ff"/><circle cx="58" cy="58" r="16" fill="#eef2ff"/><path d="M29 39 L23 46"/><path d="M47 39 L53 46"/></g><path d="M 492 395 C 526 395, 526 225, 560 225" fill="none" stroke="#111827" stroke-width="2.5" marker-end="url(#arrow)"/>
-<text x="526" y="300" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" fill="#374151"><tspan x="526" dy="0">HTTP API</tspan></text>
-<path d="M 745 395 C 775 395, 775 225, 805 225" fill="none" stroke="#111827" stroke-width="2.5" marker-end="url(#arrow)"/>
-<text x="775" y="300" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" fill="#374151"><tspan x="775" dy="0">HTTP API</tspan></text>
-<path d="M 315 472 C 350 472, 350 472, 385 472" fill="none" stroke="#111827" stroke-width="2.5" marker-end="url(#arrow)"/>
-<text x="350" y="462" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" fill="#374151"><tspan x="350" dy="0">runs</tspan></text>
-<path d="M 955 435 C 777.5 435, 777.5 435, 600 435" fill="none" stroke="#111827" stroke-width="2.5" marker-end="url(#arrow)"/>
-<text x="777.5" y="425" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" fill="#374151"><tspan x="777.5" dy="0">shell command</tspan></text>
-<path d="M 955 470 C 892.5 470, 892.5 470, 830 470" fill="none" stroke="#111827" stroke-width="2.5" marker-end="url(#arrow)"/>
-<text x="892.5" y="460" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" fill="#374151"><tspan x="892.5" dy="0">stdio tools</tspan></text>
-<path d="M 1110 385 C 1017.5 385, 1017.5 155, 925 155" fill="none" stroke="#111827" stroke-width="2.5" stroke-dasharray="7 8" marker-end="url(#arrow)"/>
-<text x="1017.5" y="260" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" fill="#374151"><tspan x="1017.5" dy="0">direct HTTP when configured</tspan></text>
-<path d="M 1110 505 C 1110 505, 1110 540, 1110 540" fill="none" stroke="#111827" stroke-width="2.5" stroke-dasharray="7 8" marker-end="url(#arrow)"/>
-<path d="M 492 540 C 498.5 540, 498.5 575, 505 575" fill="none" stroke="#111827" stroke-width="2.5" marker-end="url(#arrow)"/>
-<text x="498.5" y="547.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" fill="#374151"><tspan x="498.5" dy="0">reads</tspan></text>
-<path d="M 745 540 C 712.5 540, 712.5 575, 680 575" fill="none" stroke="#111827" stroke-width="2.5" marker-end="url(#arrow)"/>
-<text x="712.5" y="547.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" fill="#374151"><tspan x="712.5" dy="0">reads</tspan></text>
-<text x="700" y="145" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="21" font-weight="700" fill="#111827"><tspan x="700" dy="0">TimePro Web API</tspan></text>
-<text x="700" y="178" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="500" fill="#4b5563"><tspan x="700" dy="0">Timesheets, leave, invoices, CRM bookings, auth</tspan></text>
-<text x="98" y="348" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" fill="#111827"><tspan x="98" dy="0">Developer machine / automation host</tspan></text>
-<text x="220" y="485" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="19" font-weight="700" fill="#111827"><tspan x="220" dy="0">Human users</tspan><tspan x="220" dy="23">and scripts</tspan></text>
-<text x="220" y="528" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="500" fill="#4b5563"><tspan x="220" dy="0">Terminal, launchd, CI</tspan></text>
-<text x="492.5" y="483" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="21" font-weight="700" fill="#111827"><tspan x="492.5" dy="0">tp CLI</tspan></text>
-<text x="492.5" y="513" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="500" fill="#4b5563"><tspan x="492.5" dy="0">Agentic-first command surface</tspan></text>
-<text x="745" y="483" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="21" font-weight="700" fill="#111827"><tspan x="745" dy="0">tp mcp</tspan></text>
-<text x="745" y="513" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="500" fill="#4b5563"><tspan x="745" dy="0">stdio MCP tools</tspan></text>
-<text x="575" y="618" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="21" font-weight="700" fill="#111827"><tspan x="575" dy="0">Local config</tspan></text>
-<text x="575" y="643" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="500" fill="#4b5563"><tspan x="575" dy="0">~/.config/timepro-cli</tspan></text>
-<text x="928" y="348" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" fill="#111827"><tspan x="928" dy="0">AI agent workspace</tspan></text>
-<text x="1110" y="473" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="21" font-weight="700" fill="#111827"><tspan x="1110" dy="0">AI agents</tspan></text>
-<text x="1110" y="503" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="500" fill="#4b5563"><tspan x="1110" dy="0">Claude Code, Codex, Copilot, scripts</tspan></text>
-<text x="1110" y="585" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="21" font-weight="700" fill="#111827"><tspan x="1110" dy="0">Workspace tools</tspan></text>
-<text x="1110" y="612" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="500" fill="#4b5563"><tspan x="1110" dy="0">Files, Git, GitHub, Azure DevOps</tspan></text>
-<g transform="translate(95 735)"><text x="0" y="0" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" fill="#111827">Legend</text><path d="M0 30 H85" stroke="#111827" stroke-width="2.5" marker-end="url(#arrow)"/><text x="105" y="35" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#374151">Command/API data flow</text><path d="M360 30 H445" stroke="#111827" stroke-width="2.5" stroke-dasharray="7 8" marker-end="url(#arrow)"/><text x="465" y="35" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#374151">Optional direct or context access</text></g>
-<text x="80" y="850" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#111827">GitHub | Wiki | Technologies and Architecture</text><text x="1260" y="850" text-anchor="end" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#111827">timepro.tools</text><rect x="1280" y="830" width="18" height="18" fill="#6b7280"/><rect x="1303" y="830" width="18" height="18" fill="#6b7280"/><rect x="1280" y="853" width="18" height="18" fill="#9ca3af"/><rect x="1303" y="853" width="18" height="18" fill="#d14343"/>
+<desc id="desc">TimePro Web API is at the top. The local tp executable has CLI command mode and tp mcp mode. Both modes share the same TimePro client and local config. Human users, scripts, and AI agents use tp; agents can also use workspace context and optional direct API access when configured.</desc>
+<defs>
+<marker id="arrow-CC4141" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L9,5 L0,10 z" fill="#CC4141"/></marker><marker id="arrow-333333" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L9,5 L0,10 z" fill="#333333"/></marker><marker id="arrow-797979" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L9,5 L0,10 z" fill="#797979"/></marker><filter id="shadow" x="-5%" y="-5%" width="110%" height="110%"><feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000" flood-opacity="0.12"/></filter>
+<symbol id="ic-cloud" viewBox="0 0 24 24"><path d="M7.5 19 A4.5 4.5 0 0 1 7 10 A5.5 5.5 0 0 1 17.5 8.8 A4 4 0 0 1 17.3 19 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+<symbol id="ic-link" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 14.5 L14.5 9.5"/><path d="M11 7 L13 5 A4 4 0 0 1 19 11 L17 13"/><path d="M13 17 L11 19 A4 4 0 0 1 5 13 L7 11"/></g></symbol>
+<symbol id="ic-terminal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 10 L10 12.5 L7 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12.5 15 H16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="ic-puzzle" viewBox="0 0 24 24"><path d="M4 8 h4 a2 2 0 1 1 4 0 h4 v4 a2 2 0 1 0 0 4 v4 h-4 a2 2 0 1 0 -4 0 H4 v-4 a2 2 0 1 1 0 -4 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+<symbol id="ic-doc" viewBox="0 0 24 24"><path d="M7 3 h7 l5 5 v12 a1 1 0 0 1 -1 1 H6 a1 1 0 0 1 -1 -1 V4 a1 1 0 0 1 1 -1 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M14 3 v5 h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 13 h6 M9 16 h6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+<symbol id="ic-person" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5.5 19.5 a6.5 6.5 0 0 1 13 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="ic-robot" viewBox="0 0 24 24"><rect x="5" y="8" width="14" height="11" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 4 V8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="3.5" r="1.5" fill="currentColor"/><circle cx="9.5" cy="13" r="1.3" fill="currentColor"/><circle cx="14.5" cy="13" r="1.3" fill="currentColor"/><path d="M3 12.5 V15.5 M21 12.5 V15.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="ic-folder" viewBox="0 0 24 24"><path d="M4 7 a1.5 1.5 0 0 1 1.5 -1.5 H9 l2 2 h6.5 a1.5 1.5 0 0 1 1.5 1.5 V17 a1.5 1.5 0 0 1 -1.5 1.5 H5.5 A1.5 1.5 0 0 1 4 17 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+</defs>
+<rect width="1600" height="980" fill="#FFFFFF"/>
+<text x="800" y="58" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="40" font-weight="700" fill="#333333"><tspan x="800" dy="0">Architecture Diagram - TimePro Tools</tspan></text>
+<text x="800" y="92" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="500" fill="#797979"><tspan x="800" dy="0">TimePro Web API at top; local tp executable and consumers below</tspan></text>
+<g filter="url(#shadow)"><rect x="500" y="110" width="600" height="130" rx="14" fill="#FFFFFF" stroke="#333333" stroke-width="2.4"/>
+<rect x="500" y="110" width="600" height="34" rx="14" fill="#CC4141"/>
+<rect x="500" y="128" width="600" height="16" fill="#CC4141"/></g>
+<g filter="url(#shadow)"><rect x="270" y="315" width="1060" height="350" rx="8" fill="#F7F7F7" stroke="#333333" stroke-width="2"/></g>
+<g filter="url(#shadow)"><rect x="650" y="380" width="300" height="88" rx="14" fill="#FFFFFF" stroke="#333333" stroke-width="2.4"/>
+<rect x="650" y="380" width="300" height="34" rx="14" fill="#333333"/>
+<rect x="650" y="398" width="300" height="16" fill="#333333"/></g>
+<g filter="url(#shadow)"><rect x="370" y="520" width="280" height="100" rx="14" fill="#FFFFFF" stroke="#333333" stroke-width="2.4"/>
+<rect x="370" y="520" width="280" height="34" rx="14" fill="#797979"/>
+<rect x="370" y="538" width="280" height="16" fill="#797979"/></g>
+<g filter="url(#shadow)"><rect x="950" y="520" width="280" height="100" rx="14" fill="#FFFFFF" stroke="#333333" stroke-width="2.4"/>
+<rect x="950" y="520" width="280" height="34" rx="14" fill="#797979"/>
+<rect x="950" y="538" width="280" height="16" fill="#797979"/></g>
+<g filter="url(#shadow)"><rect x="680" y="545" width="240" height="75" rx="14" fill="#FFFFFF" stroke="#333333" stroke-width="2.4"/>
+<rect x="680" y="545" width="240" height="34" rx="14" fill="#AAAAAA"/>
+<rect x="680" y="563" width="240" height="16" fill="#AAAAAA"/></g>
+<g filter="url(#shadow)"><rect x="230" y="735" width="270" height="105" rx="14" fill="#FFFFFF" stroke="#333333" stroke-width="2.4"/>
+<rect x="230" y="735" width="270" height="34" rx="14" fill="#797979"/>
+<rect x="230" y="753" width="270" height="16" fill="#797979"/></g>
+<g filter="url(#shadow)"><rect x="665" y="735" width="270" height="105" rx="14" fill="#FFFFFF" stroke="#333333" stroke-width="2.4"/>
+<rect x="665" y="735" width="270" height="34" rx="14" fill="#CC4141"/>
+<rect x="665" y="753" width="270" height="16" fill="#CC4141"/></g>
+<g filter="url(#shadow)"><rect x="1100" y="735" width="270" height="105" rx="14" fill="#FFFFFF" stroke="#333333" stroke-width="2.4"/>
+<rect x="1100" y="735" width="270" height="34" rx="14" fill="#AAAAAA"/>
+<rect x="1100" y="753" width="270" height="16" fill="#AAAAAA"/></g>
+<use href="#ic-cloud" x="707" y="117" width="20" height="20" color="#FFFFFF"/>
+<use href="#ic-link" x="675" y="387" width="20" height="20" color="#FFFFFF"/>
+<use href="#ic-terminal" x="411" y="527" width="20" height="20" color="#FFFFFF"/>
+<use href="#ic-puzzle" x="1018" y="527" width="20" height="20" color="#FFFFFF"/>
+<use href="#ic-doc" x="723" y="552" width="20" height="20" color="#FFFFFF"/>
+<use href="#ic-person" x="293" y="742" width="20" height="20" color="#FFFFFF"/>
+<use href="#ic-robot" x="739" y="742" width="20" height="20" color="#FFFFFF"/>
+<use href="#ic-folder" x="1131" y="742" width="20" height="20" color="#FFFFFF"/>
+<path d="M 800 380 L 800 240" fill="none" stroke="#CC4141" stroke-width="2.8" marker-end="url(#arrow-CC4141)"/>
+<path d="M 510 520 L 510 470 L 650 424" fill="none" stroke="#333333" stroke-width="2.8" marker-end="url(#arrow-333333)"/>
+<path d="M 1090 520 L 1090 470 L 950 424" fill="none" stroke="#333333" stroke-width="2.8" marker-end="url(#arrow-333333)"/>
+<path d="M 800 545 L 800 468" fill="none" stroke="#797979" stroke-width="2.8" marker-end="url(#arrow-797979)"/>
+<path d="M 365 735 L 365 705 L 460 705 L 460 620" fill="none" stroke="#333333" stroke-width="2.8" marker-end="url(#arrow-333333)"/>
+<path d="M 735 735 L 735 705 L 560 705 L 560 620" fill="none" stroke="#333333" stroke-width="2.8" marker-end="url(#arrow-333333)"/>
+<path d="M 865 735 L 865 705 L 1090 705 L 1090 620" fill="none" stroke="#333333" stroke-width="2.8" marker-end="url(#arrow-333333)"/>
+<path d="M 1100 787 L 935 787" fill="none" stroke="#333333" stroke-width="2.8" marker-end="url(#arrow-333333)"/>
+<path d="M 935 735 L 1015 688 L 1360 688 L 1360 175 L 1100 175" fill="none" stroke="#797979" stroke-width="2.8" stroke-dasharray="9 9" marker-end="url(#arrow-797979)"/>
+<text x="814" y="133" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="19" font-weight="700" fill="#FFFFFF"><tspan x="814" dy="0">TimePro Web API</tspan></text>
+<text x="800" y="192" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="500" fill="#333333"><tspan x="800" dy="0">Source system for timesheets, leave, invoices, CRM bookings, and auth</tspan></text>
+<text x="294" y="347" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#333333"><tspan x="294" dy="0">Local tp executable</tspan></text>
+<text x="294" y="372" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="500" fill="#797979"><tspan x="294" dy="0">One installed .NET tool. CLI and tp mcp share one TimePro client.</tspan></text>
+<text x="814" y="403" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="19" font-weight="700" fill="#FFFFFF"><tspan x="814" dy="0">Shared TimePro client</tspan></text>
+<text x="800" y="446" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="500" fill="#333333"><tspan x="800" dy="0">Auth headers + HTTP calls</tspan></text>
+<text x="524" y="543" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="19" font-weight="700" fill="#FFFFFF"><tspan x="524" dy="0">CLI command mode</tspan></text>
+<text x="510" y="586" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="500" fill="#333333"><tspan x="510" dy="0">`tp ts get`, `tp scrum`, scripts</tspan></text>
+<text x="1104" y="543" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="19" font-weight="700" fill="#FFFFFF"><tspan x="1104" dy="0">tp mcp mode</tspan></text>
+<text x="1090" y="586" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="500" fill="#333333"><tspan x="1090" dy="0">MCP server over stdio</tspan></text>
+<text x="814" y="568" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="19" font-weight="700" fill="#FFFFFF"><tspan x="814" dy="0">Local config</tspan></text>
+<text x="800" y="611" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="500" fill="#333333"><tspan x="800" dy="0">~/.config/timepro-cli</tspan></text>
+<text x="379" y="758" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="19" font-weight="700" fill="#FFFFFF"><tspan x="379" dy="0">Human users</tspan></text>
+<text x="365" y="801" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="500" fill="#333333"><tspan x="365" dy="0">Terminal, scripts, launchd, CI</tspan></text>
+<text x="814" y="758" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="19" font-weight="700" fill="#FFFFFF"><tspan x="814" dy="0">AI agents</tspan></text>
+<text x="800" y="801" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="500" fill="#333333"><tspan x="800" dy="0">Claude Code, Codex, Copilot</tspan></text>
+<text x="1249" y="758" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="19" font-weight="700" fill="#FFFFFF"><tspan x="1249" dy="0">Workspace context</tspan></text>
+<text x="1235" y="801" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="500" fill="#333333"><tspan x="1235" dy="0">Files, Git, GitHub, Azure DevOps</tspan></text>
+<rect x="660" y="276" width="280" height="20" fill="#FFFFFF"/><text x="800" y="290" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#333333"><tspan x="800" dy="0">One TimePro client inside tp</tspan></text>
+<text x="800" y="692" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#333333"><tspan x="800" dy="0">Consumers and agent context</tspan></text>
+<g transform="translate(95 885)"><text x="0" y="0" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="700" fill="#333333">Legend</text><path d="M0 34 H88" stroke="#333333" stroke-width="2.8" marker-end="url(#arrow-333333)"/><text x="112" y="39" font-family="Arial, Helvetica, sans-serif" font-size="15" fill="#333333">Command/API data flow</text><path d="M390 34 H478" stroke="#797979" stroke-width="2.8" stroke-dasharray="9 9" marker-end="url(#arrow-797979)"/><text x="502" y="39" font-family="Arial, Helvetica, sans-serif" font-size="15" fill="#333333">Optional direct API access</text></g>
+<text x="80" y="955" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#333333">GitHub | Wiki | Technologies and Architecture</text><text x="1428" y="955" text-anchor="end" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#333333">timepro.tools</text><g aria-label="SSW four squares logo"><rect x="1450" y="928" width="18.48" height="18.48" fill="#797979"/><rect x="1473.52" y="928" width="18.48" height="18.48" fill="#333333"/><rect x="1450" y="951.52" width="18.48" height="18.48" fill="#AAAAAA"/><rect x="1473.52" y="951.52" width="18.48" height="18.48" fill="#CC4141"/></g>
 </svg>
