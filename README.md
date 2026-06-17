@@ -31,8 +31,8 @@ SSW TimePro is a time tracking and invoicing system. This CLI makes it fast to v
 ### 1. Install as global tool
 
 ```bash
-git clone https://github.com/SSWConsulting/timepro-cli.git
-cd timepro-cli
+git clone https://github.com/SSWConsulting/timepro.tools.git
+cd timepro.tools
 dotnet pack src/SSW.TimePro.Cli/ -o src/SSW.TimePro.Cli/nupkg
 dotnet tool install -g --add-source src/SSW.TimePro.Cli/nupkg SSW.TimePro.Cli
 ```
@@ -42,7 +42,7 @@ This makes the `tp` command available system-wide.
 To update after pulling new changes:
 
 ```bash
-cd timepro-cli
+cd timepro.tools
 git pull
 dotnet pack src/SSW.TimePro.Cli/ -o src/SSW.TimePro.Cli/nupkg
 dotnet tool uninstall -g SSW.TimePro.Cli
@@ -59,8 +59,8 @@ dotnet tool uninstall -g SSW.TimePro.Cli
 <summary>Alternative: Run from project directory without global install</summary>
 
 ```bash
-git clone https://github.com/SSWConsulting/timepro-cli.git
-cd timepro-cli
+git clone https://github.com/SSWConsulting/timepro.tools.git
+cd timepro.tools
 dotnet build
 ```
 
