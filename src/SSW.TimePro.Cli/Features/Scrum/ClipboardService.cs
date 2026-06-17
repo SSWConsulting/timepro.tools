@@ -144,13 +144,19 @@ public class ClipboardService
     {
         try
         {
-            var psi = new ProcessStartInfo("powershell", $"-NoProfile -Command \"Set-Clipboard -Value @'\n{text}\n'@\"")
+            var psi = new ProcessStartInfo(
+                "powershell",
+                "-NoProfile -NonInteractive -Command \"Set-Clipboard -Value ([Console]::In.ReadToEnd())\"")
             {
+                RedirectStandardInput = true,
                 UseShellExecute = false,
-                CreateNoWindow = true
+                CreateNoWindow = true,
+                StandardInputEncoding = new System.Text.UTF8Encoding(false)
             };
             using var p = Process.Start(psi);
             if (p is null) return Result.Failed;
+            p.StandardInput.Write(text);
+            p.StandardInput.Close();
             p.WaitForExit();
             return p.ExitCode == 0 ? Result.PlainTextCopied : Result.Failed;
         }
