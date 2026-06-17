@@ -66,6 +66,22 @@ dotnet test tests/SSW.TimePro.Cli.Integration/
 
 # E2E (requires staging credentials)
 ./scripts/e2e/run-all.sh
+
+# NuGet package safety audit (also used by the optional Git pre-push hook)
+scripts/security/nuget-audit.sh
+```
+
+## Optional Git Hook
+
+This repo supports Git 2.54 config-based hooks for a local NuGet safety check before push.
+It avoids checked-in `.githooks` and does not block developers who do not have `dotnet`
+installed; missing `dotnet` is skipped, while reported NuGet vulnerabilities fail the push.
+
+```bash
+chmod +x scripts/security/nuget-audit.sh
+git config --local hook.nuget-audit.event pre-push
+git config --local hook.nuget-audit.command scripts/security/nuget-audit.sh
+git hook list pre-push
 ```
 
 ## Documentation & Examples

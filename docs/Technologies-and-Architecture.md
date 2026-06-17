@@ -1,25 +1,14 @@
 # Technologies and Architecture
 
-This document is the current technical overview for the TimePro CLI and MCP host. It covers the technology stack, main design patterns, data flow, and project workflow.
+This document is the current technical overview for the TimePro CLI and MCP host. It covers the technology stack, main design patterns, and data flow.
 
 ## Architecture Overview
 
-```mermaid
-flowchart TD
-    User["User or automation"] --> CLI["tp CLI commands"]
-    Agent["AI agent"] --> MCP["tp mcp stdio host"]
-    CLI --> Features["Vertical slice feature commands"]
-    MCP --> Tools["MCP tool classes"]
-    Features --> Config["ConfigService"]
-    Tools --> Config
-    Features --> ApiClient["TimeProApiClient"]
-    Tools --> ApiClient
-    ApiClient --> TimePro["TimePro HTTP API"]
-    Config --> Files["~/.config/timepro-cli"]
-    Features --> Output["OutputHelper"]
-    Output --> Human["Spectre.Console output"]
-    Output --> Json["Raw JSON output"]
-```
+![Architecture Diagram - TimePro Tools](architecture-diagram.svg)
+
+Editable source: [architecture-diagram.excalidraw](architecture-diagram.excalidraw)
+
+The TimePro Web API is the source system. The CLI and MCP host call that API using local tenant configuration. AI agents can use the CLI directly, call the MCP host, or use direct HTTP access when separately configured. Agents may also use local workspace tools such as files, Git, GitHub, and Azure DevOps alongside TimePro data.
 
 The application is a local command-line tool. It does not host a web app or database. It reads local configuration, calls the existing TimePro HTTP API, and prints either human-friendly terminal output or machine-readable JSON.
 
@@ -71,6 +60,7 @@ Each CLI command lives with its feature area and owns its settings, validation, 
 - Dual output paths: commands use `OutputHelper` so `--json` writes raw JSON and human output stays Spectre-rendered.
 - Local configuration service: `ConfigService` reads and writes global config, tenant config, and repo mappings.
 - MCP tool facade: MCP tools call the same infrastructure as CLI commands instead of duplicating API plumbing.
+- Agentic-first interface: the CLI is optimized for agents and scripted automation that can run shell commands, inspect files, use Git, and combine TimePro with adjacent project context.
 
 ## Configuration and Secrets
 
@@ -120,14 +110,11 @@ Do not spread TimePro HTTP calls through feature commands. Add new API methods t
 ## Documentation
 
 - [README.md](../README.md) is the user entry point and command reference.
+- [Instructions-Compile.md](Instructions-Compile.md) explains how to build and run the project locally.
+- [Instructions-Deployment.md](Instructions-Deployment.md) explains packaging and installation.
+- [Business.md](Business.md) explains the purpose, problem, goals, and intent.
 - [Testing-Strategy.md](Testing-Strategy.md) describes unit, integration, and E2E test coverage.
+- [Alternative-Solutions-Considered.md](Alternative-Solutions-Considered.md) records why CLI-first was chosen over MCP-only or website-first approaches.
 - [accounting.md](accounting.md) documents read-only accounting commands.
 
 Use ADRs under `docs/adrs/` when a decision is high impact, costly to reverse, or needs review context. Keep routine implementation notes in the pull request or issue instead.
-
-## ALM
-
-- Build with `dotnet build`.
-- Test with `dotnet test tests/SSW.TimePro.Cli.Tests/` and `dotnet test tests/SSW.TimePro.Cli.Integration/`.
-- Run E2E scripts only when staging credentials are available.
-- Keep docs changes in the same commit as behavior changes when the code changes user-visible behavior.

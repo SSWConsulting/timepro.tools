@@ -500,10 +500,20 @@ Add to your Codex MCP config:
 }
 ```
 
+## Architecture
+
+![Architecture Diagram - TimePro Tools](docs/architecture-diagram.svg)
+
+Editable source: [docs/architecture-diagram.excalidraw](docs/architecture-diagram.excalidraw)
+
 ## Documentation
 
-- [Technologies and Architecture](docs/Technologies-and-Architecture.md) - Technical stack, architecture overview, design patterns, API boundary, and ALM notes
+- [Business](docs/Business.md) - Purpose, problem, goals, and statement of intent
+- [Instructions - Compile](docs/Instructions-Compile.md) - Build, run, and F5 experience
+- [Instructions - Deployment](docs/Instructions-Deployment.md) - Package and install the CLI
+- [Technologies and Architecture](docs/Technologies-and-Architecture.md) - Technical stack, architecture overview, design patterns, and API boundary
 - [Testing Strategy](docs/Testing-Strategy.md) - Unit, integration, and E2E test approach
+- [Alternative Solutions Considered](docs/Alternative-Solutions-Considered.md) - CLI vs MCP vs website
 - [Accounting Commands](docs/accounting.md) - Read-only accounting command reference
 
 ## Project Structure
