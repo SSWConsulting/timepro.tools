@@ -116,14 +116,16 @@ tp ts get 2026-03-12       # Specific date
 | `tp ts suggest [DATE]` | View suggested timesheets |
 | `tp ts accept ID` | Accept a suggested timesheet |
 | `tp ts export` | Export timesheets to CSV |
-| `tp ts check` | Validate week for gaps, overlaps, missing descriptions |
+| `tp ts check` | Leave-aware week validation: gaps, overlaps, missing descriptions, under/over hours; approved leave/holidays count as covered (`--week N`, `--json`) |
 | `tp ts copy` | Copy timesheets from one day to another |
 | `tp bk list` | List CRM bookings/appointments |
 | `tp leave list` | List leave entries (`--filter UPCOMING\|PAST`) |
+| `tp leave balance` | Show leave-usage signal (`--emp-id`): days since last leave + hours taken in last 12 months |
 | `tp leave create` | Create a leave request (see options below) |
 | `tp leave cancel ID` | Cancel a leave request (`--reason`) |
 | `tp cl search QUERY` | Search for clients |
 | `tp proj list --client ID` | List projects for a client |
+| `tp proj recent` | Surface projects you've recently logged time against (likely picks for new entries) |
 | `tp rate get --client ID` | Get billing rate (with expiry warnings) |
 | `tp iter list --project ID` | List iterations/sprints for a project |
 | `tp summary` | Project hours breakdown (`--week`, `--month`, `--from/--to`) |
@@ -139,7 +141,7 @@ tp ts get 2026-03-12       # Specific date
 | `tp skills create TARGET` | Generate agent skill files (`--accounting` for the accountant CLI skill) |
 | `tp user me` | Show current user info |
 | `tp blog list` | Latest blog posts (`--mine`, `--limit N`, `--all`) |
-| `tp mcp` | Start MCP server (stdio) |
+| `tp mcp` | Start MCP server (stdio); `--tenant NAME` binds the session to a specific tenant config without changing the global active tenant |
 | **Accountant (read-only)** | See [`docs/accounting.md`](docs/accounting.md) |
 | `tp invoice list / get / lines / timesheets / receipts` | Invoices |
 | `tp receipt list / get / outstanding` | Receipts + aged debtors |
@@ -152,6 +154,8 @@ tp ts get 2026-03-12       # Specific date
 | `tp prepaid summary / status INVOICE_ID` | Prepaid drawdown totals / PDF report |
 
 All read commands support `--json` for machine-readable output. All write commands support `--yes` to skip confirmation prompts.
+
+**`--json` error contract:** on failure, the command emits a structured envelope to **stdout** so stdout stays valid JSON even when an API call fails — `{"error":{"code":<int|null>,"message":"...","detail":<string|null>}}` (all keys always present) — and exits non-zero. Human-readable error/warning text always goes to **stderr**, so it never corrupts the JSON stream.
 
 ### Aliases
 
@@ -337,9 +341,12 @@ Check for gaps before submitting timesheets:
 ```bash
 tp ts check                    # This week
 tp ts check --week -1          # Last week
+tp ts check --week --json      # Machine-readable, per-day breakdown
 ```
 
 Checks for: missing days, under/over hours, overlapping entries, missing descriptions, unaccepted suggestions. Returns exit code 1 when errors are found (CI-friendly).
+
+**Leave-aware:** approved leave and public holidays count toward coverage, so a full-day leave day is reported as covered (never an error) and a partial-day leave only expects the remaining hours. The `--json` output carries a per-day `covered` / `coverReason` (`logged`, `leave-full`, `leave-partial`, `holiday`, `missing`), `leaveHours` / `leaveType`, plus a top-level `allCovered` flag.
 
 ### Copy Timesheets
 
@@ -435,11 +442,13 @@ The MCP server exposes TimePro data to AI agents via stdio transport. Current to
 
 | Group | Examples |
 |-------|----------|
-| Timesheets | Get, create, update, delete, suggested timesheets, accept suggestions, list iterations |
+| Timesheets | Get, create, update, delete, suggested timesheets, accept suggestions, list iterations, `check_week` (leave-aware weekly coverage) |
 | Lookup | Search clients, list projects, get client rate, CRM bookings, location and repo mapping |
-| Leave | List EasyLeave entries, optionally filtered by `empId` |
+| Leave | List EasyLeave entries (optionally filtered by `empId`), `get_leave_balance` (days since last leave + 12-month hours) |
 | Accounting | Invoices, receipts, credit notes, products/SKUs, client rates, unbilled time, recurring invoices |
 | Reporting | Timesheet queries, current user, categories, billable types, locations, project summaries, prepaid drawdown status |
+
+**Tenant resolution:** the MCP server uses the active tenant (`tp tenant set`). Pass `--tenant NAME` in `args` to pin a session to a specific tenant config without changing the global active tenant. If no active tenant is set and exactly one tenant config exists, the server defaults to that single tenant — so a single-tenant install works out of the box.
 
 ### Claude Code
 

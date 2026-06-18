@@ -45,10 +45,25 @@ Run `tp --help` for full command list. Key commands:
 - `tp tenant set ssw-staging` - Switch active tenant (uses filename, not tenantId inside the file)
 - `tp ts get --week` - View week's timesheets
 - `tp ts create ...` - Create timesheet
+- `tp ts check --week --json` - Leave-aware weekly coverage check (see below)
+- `tp project recent` - Surface projects recently logged against (likely picks for new entries)
 - `tp leave create --start 2026-03-30 --end 2026-03-30 --type 1 --note "..." --approved-by "email" --cc "e1,e2" --yes` - Create leave
 - `tp leave cancel ID --reason "..." --yes` - Cancel leave
 - `tp leave list --filter UPCOMING --json` - List leave
-- `tp mcp` - Start MCP server
+- `tp leave balance --emp-id JEK` - Leave-usage signal (days since last leave + hours taken in last 12 months)
+- `tp mcp [--tenant NAME]` - Start MCP server (optional per-session tenant binding)
+
+### Leave-aware `tp ts check`
+
+`ts check` merges approved leave + public holidays into weekly coverage. A full-day leave day is `covered` (never an error); a partial-day leave only expects the remaining hours. The `--json` output gives per-day `covered` / `coverReason` (`logged`, `leave-full`, `leave-partial`, `holiday`, `missing`), `leaveHours` / `leaveType`, and a top-level `allCovered`. Fetch/merge logic lives in the shared `WeekCoverageService`; the rules are in the pure, unit-tested `CheckEvaluator`. Exit code 1 when errors are found (CI-friendly).
+
+### `--json` error envelope
+
+On the `--json` path, failures emit a structured envelope to **stdout** so stdout stays valid JSON: `{"error":{"code":<int|null>,"message":"...","detail":<string|null>}}` (all keys always present), with a non-zero exit code. Human-readable error/warning text goes to **stderr**.
+
+### MCP tools + tenant resolution
+
+Slim MCP tool set on top of the groups above includes `check_week` (leave-aware weekly coverage, shares `WeekCoverageService`) and `get_leave_balance`. The MCP host resolves the tenant in this order: `--tenant NAME` → global active tenant → the sole tenant config if exactly one exists (single-tenant installs work without `tp tenant set`). `--tenant` does NOT change the global active tenant.
 
 ## Tenants
 
@@ -61,6 +76,8 @@ The leave create endpoint (`POST /api/leave/`) requires these fields in the requ
 - **Optional**: `Note`, `OptionalEmp` (CC emails), `ApprovedBy` (email), `TimeLessOverride`
 
 The cancel endpoint (`PUT /api/leave/{id}/cancel`) requires `LeaveId` (Guid) and `CancellationReason` in the request body.
+
+The list endpoint (`GET /api/leave/`) returns per-entry `daysAway`, `updatedAt`, `timeLessOverride`, `cancellationReason` (all bound on `LeaveEntry`) plus a top-level `cancelledCount` on the list envelope. These surface in `tp leave list --json`.
 
 ## Testing
 
