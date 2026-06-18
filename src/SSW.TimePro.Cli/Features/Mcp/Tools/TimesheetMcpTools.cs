@@ -173,49 +173,25 @@ public class TimesheetMcpTools
         [Description("Alias for empId.")] string? employeeId = null,
         CancellationToken ct = default)
     {
-        const int leavePageSize = 200;
-
         var tenant = _config.LoadActiveTenantConfig();
         if (tenant?.EmployeeId is null)
             return """{"error": "Not logged in. Run 'tp login --tenant <id>' first."}""";
 
         var targetEmpId = ResolveEmpId(empId, employeeId, tenant.EmployeeId);
 
-        var today = DateOnly.FromDateTime(DateTime.Today);
-        var monday = today.AddDays(-(int)today.DayOfWeek + (int)DayOfWeek.Monday + (week * 7));
-        if (today.DayOfWeek == DayOfWeek.Sunday)
-            monday = monday.AddDays(-7);
-        var friday = monday.AddDays(4);
+        // Shared orchestration with `tp ts check` — fetch + leave-merge + per-day eval.
+        var coverage = await WeekCoverageService.EvaluateWeekAsync(_api, targetEmpId, week, ct);
 
-        // Fetch leave once across UPCOMING + PAST (mirrors `tp ts check`).
-        var leaveEntries = new List<LeaveEntry>();
-        foreach (var filter in new[] { "UPCOMING", "PAST" })
+        var result = new
         {
-            var response = await _api.GetLeaveAsync(filter, 1, leavePageSize, targetEmpId, ct);
-            var items = response?.Leaves?.Items;
-            if (items is not null)
-                leaveEntries.AddRange(items);
-        }
-        var approvedLeave = CheckEvaluator.ToLeaveDays(leaveEntries);
-
-        var days = new List<object>();
-        int errors = 0, warnings = 0, infos = 0;
-        var dayChecks = new List<CheckEvaluator.DayCheck>();
-
-        for (var d = monday; d <= friday; d = d.AddDays(1))
-        {
-            var timesheets = await _api.GetTimesheetsAsync(targetEmpId, d, ct);
-            var real = timesheets.Where(t => !t.IsSuggested).ToList();
-            var suggestedCount = timesheets.Count(t => t.IsSuggested);
-
-            var check = CheckEvaluator.EvaluateDay(d, real, suggestedCount, approvedLeave);
-            dayChecks.Add(check);
-
-            errors += check.Issues.Count(i => i.Severity == "error");
-            warnings += check.Issues.Count(i => i.Severity == "warning");
-            infos += check.Issues.Count(i => i.Severity == "info");
-
-            days.Add(new
+            empId = coverage.EmpId,
+            weekStart = coverage.Monday.ToString("yyyy-MM-dd"),
+            weekEnd = coverage.Friday.ToString("yyyy-MM-dd"),
+            errors = coverage.Errors,
+            warnings = coverage.Warnings,
+            infos = coverage.Infos,
+            allCovered = coverage.AllCovered,
+            days = coverage.Days.Select(check => new
             {
                 date = check.Date.ToString("yyyy-MM-dd"),
                 dayOfWeek = check.Date.DayOfWeek.ToString(),
@@ -227,19 +203,7 @@ public class TimesheetMcpTools
                 covered = check.Covered,
                 coverReason = check.CoverReason,
                 issues = check.Issues.Select(i => new { i.Severity, i.Message })
-            });
-        }
-
-        var result = new
-        {
-            empId = targetEmpId,
-            weekStart = monday.ToString("yyyy-MM-dd"),
-            weekEnd = friday.ToString("yyyy-MM-dd"),
-            errors,
-            warnings,
-            infos,
-            allCovered = dayChecks.All(c => c.Covered),
-            days
+            })
         };
 
         return JsonSerializer.Serialize(result, JsonOpts);

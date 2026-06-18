@@ -3,7 +3,6 @@ using System.Text.Json.Serialization;
 using SSW.TimePro.Cli.Infrastructure.ApiClient;
 using SSW.TimePro.Cli.Infrastructure.Config;
 using SSW.TimePro.Cli.Infrastructure.Output;
-using SSW.TimePro.Cli.Shared.Models;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
@@ -12,8 +11,6 @@ namespace SSW.TimePro.Cli.Features.Timesheets;
 [Description("Validate timesheets for a week — check for gaps and issues (leave-aware)")]
 public class CheckCommand : AsyncCommand<CheckCommand.Settings>
 {
-    private const int LeavePageSize = 200;
-
     private readonly ITimeProApiClient _api;
     private readonly IConfigService _config;
 
@@ -50,52 +47,34 @@ public class CheckCommand : AsyncCommand<CheckCommand.Settings>
 
         var offset = (settings.Week is not null && settings.Week.IsSet) ? settings.Week.Value : 0;
         var empId = ResolveEmpId(settings.EmpId, tenant.EmployeeId);
-        var today = DateOnly.FromDateTime(DateTime.Today);
-        var monday = today.AddDays(-(int)today.DayOfWeek + (int)DayOfWeek.Monday + (offset * 7));
-        if (today.DayOfWeek == DayOfWeek.Sunday)
-            monday = monday.AddDays(-7);
-        var friday = monday.AddDays(4);
 
         try
         {
-            // Fetch leave ONCE for the run — the checked week may be entirely past
-            // (e.g. --week -1) or a Mon–Thu leave may already be "past" by Friday,
-            // so query both UPCOMING and PAST and merge.
-            var approvedLeave = await LoadApprovedLeaveAsync(empId, cancellationToken);
+            // Shared orchestration with the MCP CheckWeek tool — fetch timesheets +
+            // approved leave and evaluate each day in one place.
+            var coverage = await WeekCoverageService.EvaluateWeekAsync(_api, empId, offset, cancellationToken);
 
-            var dayResults = new List<DayJson>();
-            var dayChecks = new List<CheckEvaluator.DayCheck>();
-            int errors = 0, warnings = 0, infos = 0;
+            var dayChecks = coverage.Days;
+            var errors = coverage.Errors;
+            var warnings = coverage.Warnings;
+            var infos = coverage.Infos;
+            var allCovered = coverage.AllCovered;
+            var monday = coverage.Monday;
+            var friday = coverage.Friday;
 
-            for (var d = monday; d <= friday; d = d.AddDays(1))
+            var dayResults = dayChecks.Select(check => new DayJson
             {
-                var timesheets = await _api.GetTimesheetsAsync(empId, d, cancellationToken);
-                var real = timesheets.Where(t => !t.IsSuggested).ToList();
-                var suggested = timesheets.Where(t => t.IsSuggested).ToList();
-
-                var check = CheckEvaluator.EvaluateDay(d, real, suggested.Count, approvedLeave);
-                dayChecks.Add(check);
-
-                errors += check.Issues.Count(i => i.Severity == "error");
-                warnings += check.Issues.Count(i => i.Severity == "warning");
-                infos += check.Issues.Count(i => i.Severity == "info");
-
-                dayResults.Add(new DayJson
-                {
-                    Date = check.Date.ToString("yyyy-MM-dd"),
-                    DayOfWeek = check.Date.DayOfWeek.ToString(),
-                    TotalHours = check.TotalHours,
-                    TimesheetCount = check.TimesheetCount,
-                    SuggestedCount = check.SuggestedCount,
-                    LeaveHours = check.LeaveHours,
-                    LeaveType = check.LeaveType,
-                    Covered = check.Covered,
-                    CoverReason = check.CoverReason,
-                    Issues = check.Issues.Select(i => new IssueJson(i.Severity, i.Message)).ToList()
-                });
-            }
-
-            var allCovered = dayChecks.All(c => c.Covered);
+                Date = check.Date.ToString("yyyy-MM-dd"),
+                DayOfWeek = check.Date.DayOfWeek.ToString(),
+                TotalHours = check.TotalHours,
+                TimesheetCount = check.TimesheetCount,
+                SuggestedCount = check.SuggestedCount,
+                LeaveHours = check.LeaveHours,
+                LeaveType = check.LeaveType,
+                Covered = check.Covered,
+                CoverReason = check.CoverReason,
+                Issues = check.Issues.Select(i => new IssueJson(i.Severity, i.Message)).ToList()
+            }).ToList();
 
             var result = new
             {
@@ -171,25 +150,6 @@ public class CheckCommand : AsyncCommand<CheckCommand.Settings>
                 OutputHelper.WriteError($"API error ({ex.StatusCode}): {ex.Message}");
             return 1;
         }
-    }
-
-    /// <summary>
-    /// Loads approved leave for the employee across both UPCOMING and PAST filters,
-    /// dedupes by Id, and reduces to date-ranged day records.
-    /// </summary>
-    private async Task<List<CheckEvaluator.LeaveDay>> LoadApprovedLeaveAsync(string empId, CancellationToken ct)
-    {
-        var entries = new List<LeaveEntry>();
-
-        foreach (var filter in new[] { "UPCOMING", "PAST" })
-        {
-            var response = await _api.GetLeaveAsync(filter, 1, LeavePageSize, empId, ct);
-            var items = response?.Leaves?.Items;
-            if (items is not null)
-                entries.AddRange(items);
-        }
-
-        return CheckEvaluator.ToLeaveDays(entries);
     }
 
     private static string ResolveEmpId(string? requestedEmpId, string defaultEmpId) =>
