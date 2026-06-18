@@ -46,6 +46,13 @@ public static class WeekCoverageService
         var days = new List<CheckEvaluator.DayCheck>();
         int errors = 0, warnings = 0, infos = 0;
 
+        // Per-day loop is intentional. The server's week-range aggregates do NOT carry the
+        // per-entry fields CheckEvaluator depends on:
+        //   • /api/Timesheets/Summary (TimesheetFullCalendarDto) → only {id,title,allDay,start,
+        //     end,color,textColor}: no Notes/HasNotes, no IsSuggested, no TotalTime.
+        //   • /api/TimesheetsApi (TimesheetModel) → has rows but NO IsSuggested flag.
+        // Swapping to either would regress the missing-description / suggested-vs-real / overlap
+        // checks, so we keep GetTimesheetListViewModel per day (the only shape with all fields).
         for (var d = monday; d <= friday; d = d.AddDays(1))
         {
             var timesheets = await api.GetTimesheetsAsync(empId, d, ct);
