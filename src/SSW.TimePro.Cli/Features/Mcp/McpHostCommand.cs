@@ -54,6 +54,24 @@ public class McpHostCommand : AsyncCommand<McpHostCommand.Settings>
             if (app.Services.GetRequiredService<ITenantProvider>() is DefaultTenantProvider provider)
                 provider.SetOverride(tenant);
         }
+        else
+        {
+            // Single-tenant convenience (MCP host only): when no --tenant was given AND no
+            // active tenant is set BUT exactly one tenant config exists, bind to it so a
+            // fresh single-tenant install works in MCP without running 'tp tenant set'.
+            // Does NOT touch the global active tenant. Zero/multiple configs → unchanged
+            // (tools surface "Not logged in").
+            var config = app.Services.GetRequiredService<IConfigService>();
+            if (config.LoadActiveTenantConfig() is null)
+            {
+                var tenants = config.ListTenants();
+                if (tenants.Count == 1
+                    && app.Services.GetRequiredService<ITenantProvider>() is DefaultTenantProvider provider)
+                {
+                    provider.SetOverride(tenants[0]);
+                }
+            }
+        }
 
         await app.RunAsync();
 
