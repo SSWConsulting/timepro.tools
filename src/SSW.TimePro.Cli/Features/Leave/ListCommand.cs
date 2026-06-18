@@ -60,8 +60,11 @@ public class ListCommand : AsyncCommand<ListCommand.Settings>
 
                 foreach (var l in list)
                 {
-                    var start = l.StartDate?.Split('T')[0] ?? "?";
-                    var end = l.EndDate?.Split('T')[0] ?? "?";
+                    // Prefer the offset-free local dates; show the time for partial-day leave so the range is visible.
+                    var startRaw = l.StartDateLocal ?? l.StartDate;
+                    var endRaw = l.EndDateLocal ?? l.EndDate;
+                    var start = l.AllDay ? (startRaw?.Split('T')[0] ?? "?") : (startRaw?.Replace('T', ' ') ?? "?");
+                    var end = l.AllDay ? (endRaw?.Split('T')[0] ?? "?") : (endRaw?.Replace('T', ' ') ?? "?");
                     var status = l.StatusName;
                     var statusColor = l.LeaveStatus switch
                     {
@@ -75,7 +78,7 @@ public class ListCommand : AsyncCommand<ListCommand.Settings>
                         Markup.Escape(l.LeaveType?.Name ?? "?"),
                         start,
                         end,
-                        $"{l.TotalHours:0.0}",
+                        l.AllDay ? $"{l.Length:0.0}" : $"{l.Length:0.0} (partial)",
                         $"[{statusColor}]{status}[/]",
                         Markup.Escape(l.Note ?? ""));
                 }

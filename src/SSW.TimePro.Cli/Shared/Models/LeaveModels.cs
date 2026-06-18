@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace SSW.TimePro.Cli.Shared.Models;
 
 public class LeaveListResponse
@@ -23,10 +25,27 @@ public class LeaveEntry
     public string? Note { get; set; }
     public string? ApprovedBy { get; set; }
     public string? RequestedEmpId { get; set; }
-    public decimal TotalHours { get; set; }
+
+    /// <summary>Local start without TZ offset (e.g. "2026-03-30T00:00:00"). Prefer the date portion for day matching.</summary>
+    [JsonPropertyName("startDateWithoutOffset")]
+    public string? StartDateLocal { get; set; }
+
+    [JsonPropertyName("endDateWithoutOffset")]
+    public string? EndDateLocal { get; set; }
+
+    /// <summary>True = full-day (or multi-day) leave covering the whole day(s). False = a time-range / partial-day
+    /// leave covering only <see cref="Length"/> hours (the rest of the day still needs a timesheet).</summary>
+    public bool AllDay { get; set; }
+
+    /// <summary>Leave duration in hours (API field "length"). Replaces the never-populated "totalHours".</summary>
+    public decimal Length { get; set; }
+
     public LeaveTypeInfo? LeaveType { get; set; }
+
+    /// <summary>The API field is "status", NOT "leaveStatus" — without this binding it defaults to 0 → "Unknown".</summary>
+    [JsonPropertyName("status")]
     public int LeaveStatus { get; set; }
-    
+
     public string StatusName => LeaveStatus switch
     {
         1 => "Pending",
