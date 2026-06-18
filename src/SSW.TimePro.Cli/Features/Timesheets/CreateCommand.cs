@@ -205,6 +205,11 @@ public class CreateCommand : AsyncCommand<CreateCommand.Settings>
         catch (ApiException ex)
         {
             var detail = ApiErrorParser.ExtractDetail(ex.ResponseBody);
+            if (settings.Json)
+            {
+                OutputHelper.WriteJsonError($"API error: {ex.Message}", ex.StatusCode, detail);
+                return 1;
+            }
             if (detail is not null && detail.Contains("duplicate", StringComparison.OrdinalIgnoreCase))
             {
                 OutputHelper.WriteError("A timesheet already exists for this time slot.");

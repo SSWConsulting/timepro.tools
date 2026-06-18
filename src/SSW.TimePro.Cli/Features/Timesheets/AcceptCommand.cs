@@ -77,10 +77,17 @@ public class AcceptCommand : AsyncCommand<AcceptCommand.Settings>
         }
         catch (ApiException ex)
         {
-            OutputHelper.WriteError($"API error ({ex.StatusCode}): {ex.Message}");
             var detail = ApiErrorParser.ExtractDetail(ex.ResponseBody);
-            if (detail is not null)
-                AnsiConsole.MarkupLine($"  [dim]{Markup.Escape(detail)}[/]");
+            if (settings.Json)
+            {
+                OutputHelper.WriteJsonError($"API error: {ex.Message}", ex.StatusCode, detail);
+            }
+            else
+            {
+                OutputHelper.WriteError($"API error ({ex.StatusCode}): {ex.Message}");
+                if (detail is not null)
+                    AnsiConsole.MarkupLine($"  [dim]{Markup.Escape(detail)}[/]");
+            }
             return 1;
         }
     }

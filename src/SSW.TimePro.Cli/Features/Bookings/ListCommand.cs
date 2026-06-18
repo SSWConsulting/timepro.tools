@@ -113,7 +113,10 @@ public class ListCommand : AsyncCommand<ListCommand.Settings>
         }
         catch (ApiException ex)
         {
-            OutputHelper.WriteError($"API error ({ex.StatusCode}): {ex.Message}");
+            if (settings.Json)
+                OutputHelper.WriteJsonError($"API error: {ex.Message}", ex.StatusCode);
+            else
+                OutputHelper.WriteError($"API error ({ex.StatusCode}): {ex.Message}");
             return 1;
         }
     }

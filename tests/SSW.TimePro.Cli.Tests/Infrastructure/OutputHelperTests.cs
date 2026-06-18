@@ -23,4 +23,49 @@ public class OutputHelperTests
         output.Should().Contain("\\n");
         output.Should().Contain("\\t");
     }
+
+    [Fact]
+    public void WriteJsonError_EmitsParseableEnvelope_WithCodeAndDetail()
+    {
+        var output = CaptureStdout(() => OutputHelper.WriteJsonError("API error: boom", 500, "duplicate entry"));
+
+        // Must be a single compact line of valid JSON on stdout.
+        output.Should().NotContain("\n", because: "the envelope is compact (single line)");
+
+        using var doc = JsonDocument.Parse(output);
+        var error = doc.RootElement.GetProperty("error");
+        error.GetProperty("code").GetInt32().Should().Be(500);
+        error.GetProperty("message").GetString().Should().Be("API error: boom");
+        error.GetProperty("detail").GetString().Should().Be("duplicate entry");
+    }
+
+    [Fact]
+    public void WriteJsonError_EmitsNullCodeAndDetail_WhenOmitted()
+    {
+        var output = CaptureStdout(() => OutputHelper.WriteJsonError("Not logged in."));
+
+        using var doc = JsonDocument.Parse(output);
+        var error = doc.RootElement.GetProperty("error");
+
+        // The shape is stable: code/detail are always present, null when absent.
+        error.GetProperty("code").ValueKind.Should().Be(JsonValueKind.Null);
+        error.GetProperty("detail").ValueKind.Should().Be(JsonValueKind.Null);
+        error.GetProperty("message").GetString().Should().Be("Not logged in.");
+    }
+
+    private static string CaptureStdout(Action action)
+    {
+        var original = Console.Out;
+        var writer = new StringWriter();
+        try
+        {
+            Console.SetOut(writer);
+            action();
+        }
+        finally
+        {
+            Console.SetOut(original);
+        }
+        return writer.ToString().Trim();
+    }
 }

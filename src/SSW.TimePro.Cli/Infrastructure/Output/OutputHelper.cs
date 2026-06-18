@@ -17,6 +17,22 @@ public static class OutputHelper
         Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
     };
 
+    // Compact options for the machine-readable error envelope emitted on the
+    // --json path. Always emit every key (code/detail null when absent) so the
+    // shape is stable for agents parsing stdout.
+    private static readonly JsonSerializerOptions ErrorEnvelopeOptions = new()
+    {
+        WriteIndented = false,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
+
+    // A dedicated console bound to stderr so error/warning markup never lands on
+    // stdout (which would corrupt JSON an agent is parsing on the --json path).
+    private static readonly IAnsiConsole ErrorConsole = AnsiConsole.Create(new AnsiConsoleSettings
+    {
+        Out = new AnsiConsoleOutput(Console.Error)
+    });
+
     /// <summary>
     /// Outputs data as JSON (for --json flag) or runs the display action for human output.
     /// </summary>
@@ -41,20 +57,39 @@ public static class OutputHelper
     }
 
     /// <summary>
-    /// Writes an error message to stderr.
+    /// Writes an error message to stderr (so it never corrupts JSON on stdout).
     /// </summary>
     public static void WriteError(string message)
     {
-        AnsiConsole.MarkupLine($"[red]Error:[/] {Markup.Escape(message)}");
+        ErrorConsole.MarkupLine($"[red]Error:[/] {Markup.Escape(message)}");
     }
 
     /// <summary>
-    /// Writes a warning message.
+    /// Writes a warning message to stderr (so it never corrupts JSON on stdout).
     /// </summary>
     public static void WriteWarning(string message)
     {
-        AnsiConsole.MarkupLine($"[yellow]Warning:[/] {Markup.Escape(message)}");
+        ErrorConsole.MarkupLine($"[yellow]Warning:[/] {Markup.Escape(message)}");
     }
+
+    /// <summary>
+    /// Writes a compact, machine-readable error envelope to <b>stdout</b> for the
+    /// <c>--json</c> path: <c>{"error":{"code":&lt;code|null&gt;,"message":...,"detail":&lt;detail|null&gt;}}</c>.
+    /// This keeps stdout valid JSON for an agent even when an API call fails.
+    /// </summary>
+    public static void WriteJsonError(string message, int? code = null, string? detail = null)
+    {
+        var envelope = new ErrorEnvelope(new ErrorPayload(code, message, detail));
+        Console.Out.WriteLine(JsonSerializer.Serialize(envelope, ErrorEnvelopeOptions));
+    }
+
+    private sealed record ErrorEnvelope(
+        [property: JsonPropertyName("error")] ErrorPayload Error);
+
+    private sealed record ErrorPayload(
+        [property: JsonPropertyName("code")] int? Code,
+        [property: JsonPropertyName("message")] string Message,
+        [property: JsonPropertyName("detail")] string? Detail);
 
     /// <summary>
     /// Writes a success message.
