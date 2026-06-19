@@ -82,6 +82,11 @@ public class TimesheetGetTests : TestBase
         req.Headers!["x-timepro-tenant-id"].Should().Contain("test");
         req.Headers.Should().ContainKey("x-timepro-api-key");
         req.Headers!["x-timepro-api-key"].Should().Contain("test-api-key");
+        // Build identity headers: present and non-empty on every request.
+        req.Headers.Should().ContainKey("x-timepro-client-version");
+        req.Headers!["x-timepro-client-version"].Should().NotBeNullOrEmpty();
+        req.Headers.Should().ContainKey("x-timepro-client-commit");
+        req.Headers!["x-timepro-client-commit"].Should().NotBeNullOrEmpty();
     }
 
     [Fact]

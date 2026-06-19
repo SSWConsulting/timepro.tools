@@ -32,33 +32,50 @@ dotnet tool install -g --add-source artifacts/nupkg SSW.TimePro.Cli
 Current supported distribution paths:
 
 - Local or internal package installation via `dotnet tool install -g --add-source`.
-- Manual NuGet publish via the **Release (NuGet)** GitHub Actions workflow (see below).
+- GitHub Releases (with the `.nupkg` attached) via the **Release (NuGet)** GitHub
+  Actions workflow (see below).
 
-## Publish via GitHub Actions
+> Publishing to nuget.org is currently **disabled**. The push step in the workflow
+> is commented out; the workflow builds, packs, and cuts a GitHub Release instead.
 
-The `.github/workflows/release.yml` workflow packs and publishes the `tp` global
-tool to NuGet. It is **manually triggered** (`workflow_dispatch`) so a deploy only
-happens when a maintainer asks for one.
+## Versioning
 
-### One-time setup
+Versions are `major.minor.patch`:
 
-Add a repository secret named `NUGET_API_KEY` (Settings → Secrets and variables →
-Actions) containing a NuGet API key scoped to push the `SSW.TimePro.Cli` package.
+- **major.minor** is the single source of truth in
+  `src/SSW.TimePro.Cli/SSW.TimePro.Cli.csproj` as `<VersionPrefix>` (e.g. `0.1`).
+  Bump it by editing that one value.
+- **patch** is supplied automatically by the release workflow as the GitHub run
+  number (`github.run_number`), e.g. `0.1.42`.
+
+Local builds default to `<VersionPrefix>.0` (e.g. `0.1.0`); the meaningful patch is
+only assigned in CI. Because every run of the workflow (including dry runs) advances
+the run number, released patch numbers can have small gaps — this is expected.
+
+## Release via GitHub Actions
+
+The `.github/workflows/release.yml` workflow builds, tests, packs, and creates a
+GitHub Release for the `tp` global tool. It is **manually triggered**
+(`workflow_dispatch`) so a release only happens when a maintainer asks for one.
 
 ### Running a release
 
 1. Go to **Actions → Release (NuGet) → Run workflow**.
 2. Pick the branch/tag to build from.
-3. Inputs:
-   - **version** – optional. Overrides the version in the `.csproj` (e.g. `1.2.3`).
-     Leave blank to use the committed `<Version>`.
+3. Input:
    - **dry_run** – defaults to `true`. A dry run builds, tests, runs the NuGet
      vulnerability audit, packs, and uploads the `.nupkg` as a build artifact
-     **without** pushing to NuGet. Set to `false` to publish.
+     **without** creating a GitHub Release. Set to `false` to also cut the release
+     (tag `v<version>` plus the attached `.nupkg`).
 
 The workflow always runs the test suite and `scripts/security/nuget-audit.sh`
-before packing, and uses `--skip-duplicate` so re-running a published version is a
-no-op rather than a failure.
+before packing.
+
+### Enabling nuget.org publishing later
+
+1. Add a repository secret `NUGET_API_KEY` (Settings → Secrets and variables →
+   Actions) scoped to push the `SSW.TimePro.Cli` package.
+2. Uncomment the **Push to NuGet** step at the bottom of `release.yml`.
 
 Future distribution options:
 

@@ -666,6 +666,11 @@ public class TimeProApiClient : ITimeProApiClient
         request.Headers.TryAddWithoutValidation("x-timepro-tenant-id", tenant.TenantId);
         request.Headers.TryAddWithoutValidation("x-timepro-api-key", tenant.ApiKey);
         request.Headers.TryAddWithoutValidation("x-timepro-api-name", tenant.AppName);
+
+        // Identify which build of the CLI made the call. The commit hash pins the
+        // exact source even when the version is a local default.
+        request.Headers.TryAddWithoutValidation("x-timepro-client-version", BuildInfo.Version);
+        request.Headers.TryAddWithoutValidation("x-timepro-client-commit", BuildInfo.Commit);
     }
 
     private async Task<T?> GetAsync<T>(string relativeUrl, CancellationToken ct)
