@@ -58,6 +58,10 @@ public class ScrumCommand : AsyncCommand<ScrumCommand.Settings>
         [Description("Emit the structured scrum model as JSON")]
         public bool Json { get; set; }
 
+        [CommandOption("--smart")]
+        [Description("Use AutoScrum-inspired selection: today/yesterday/blockers by state-change date + assigned issues")]
+        public bool Smart { get; set; }
+
         [CommandOption("--set-trello-url <URL>")]
         [Description("Persist a Trello board URL for the internal scrum block and exit")]
         public string? SetTrelloUrl { get; set; }
@@ -107,7 +111,7 @@ public class ScrumCommand : AsyncCommand<ScrumCommand.Settings>
         ScrumModel model;
         try
         {
-            model = await gatherer.BuildAsync(tenant.EmployeeId, today, settings.ProjectId, forceInternal, CancellationToken.None);
+            model = await gatherer.BuildAsync(tenant.EmployeeId, today, settings.ProjectId, forceInternal, CancellationToken.None, settings.Smart);
         }
         catch (ApiException ex)
         {
@@ -206,6 +210,7 @@ public class ScrumCommand : AsyncCommand<ScrumCommand.Settings>
                 Today = model.Today,
                 YesterdayNotes = model.YesterdayNotes,
                 TodayNotes = model.TodayNotes,
+                Blockers = model.Blockers,
                 Internal = model.Internal ?? new InternalBlock { JoinedScrumMeeting = true }
             };
         }

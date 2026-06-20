@@ -25,6 +25,12 @@ public class ScrumModel
     public List<ScrumItem> Today { get; set; } = [];
 
     /// <summary>
+    /// Items that are actively blocked. Populated only when <c>--smart</c> is used.
+    /// Blockers also appear in <see cref="Today"/> for completeness.
+    /// </summary>
+    public List<ScrumItem> Blockers { get; set; } = [];
+
+    /// <summary>
     /// Raw timesheet notes for yesterday, keyed by project name. Not
     /// included in the rendered scrum bullets by default (too noisy) —
     /// exposed in the JSON output so agents / skills can use them as
