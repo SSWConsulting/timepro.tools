@@ -14,7 +14,7 @@ SSW TimePro is a time tracking and invoicing system. This CLI makes it fast to v
 - **CRM Bookings** — See your appointments from the CRM calendar
 - **Leave Management** — Create, list, and cancel EasyLeave requests
 - **Repo Mapping** — Map git repos to clients/projects; auto-detects via path or remote URL, with git worktree support; optional `--issues-repo` for projects whose issues live in a different GitHub repo than the code
-- **Daily Scrum** — Generate an SSW-format daily scrum email from timesheets, CRM bookings and GitHub activity, with rich-text / markdown / plain clipboard support and an interactive copy mode
+- **Daily Scrum** — Generate an SSW-format daily scrum email from timesheets, CRM bookings and GitHub activity, with AutoScrum-inspired `--smart` selection, overridable per-tenant/client templates, rich-text / markdown / plain clipboard support and an interactive copy mode
 - **Location Defaults** — Set WFH days so location is auto-applied when creating timesheets
 - **CSV Export** — Export timesheets for tax reports or analysis
 - **Skills Generation** — Generate agent skill files with project context and `gh` commands
@@ -137,7 +137,7 @@ tp ts get 2026-03-12       # Specific date
 | `tp map list` | List all repo mappings |
 | `tp map remove PATH` | Remove a repo mapping |
 | `tp query` | Query timesheets across employees/projects (`--group-by`, `--json`) |
-| `tp scrum` | Generate a daily scrum email from timesheets + GitHub (`-i`, `--copy --format rich\|markdown\|plain`, `--json`) |
+| `tp scrum` | Generate a daily scrum email from timesheets + GitHub (`--smart`, `--project`, `-i`, `--copy --format rich\|markdown\|plain`, `--json`, custom templates) |
 | `tp skills create TARGET [--global] [--accounting]` | Generate unified agent skill files (`--accounting` for the accountant CLI skill) |
 | `tp user me` | Show current user info |
 | `tp blog list` | Latest blog posts (`--mine`, `--limit N`, `--all`) |
@@ -398,7 +398,11 @@ tp scrum --copy --format rich       # Render & copy as RTF (Outlook / Apple Mail
 tp scrum --copy --format markdown   # Copy with [#1234](url) link syntax
 tp scrum --copy --format plain      # Copy with URLs spelled out inline
 tp scrum --date 2026-04-09          # Generate for a specific date
-tp scrum --project 1I776Q           # Filter to one project
+tp scrum --smart                    # AutoScrum-inspired selection (see below)
+tp scrum --project 1I776Q           # Include project(s); repeatable / comma-separated; overrides
+tp scrum --project 1I776Q,1I776R    #   auto-detection so you can scrum projects not logged yet
+tp scrum --template-md-only         # Print the raw markdown template (no data) for an agent to fill
+tp scrum --template-html-only       # Print the raw HTML template
 tp scrum --internal                 # Force internal daily scrum format
 tp scrum --external                 # Force client-facing format
 tp scrum --set-trello-url URL       # Save a Trello URL for the internal block (one-off)
@@ -411,6 +415,25 @@ tp scrum --set-trello-url URL       # Save a Trello URL for the internal block (
 - **Internal vs external** — classified from today's CRM bookings: any non-SSW client booking or timesheet → external format; all-SSW → internal format with the extra block (days until next client booking, Trello URL, "joined scrum meeting" checkbox). Override with `--internal` / `--external`.
 - **Issues repo** — resolved via the `--issues-repo` field on your repo mapping (falls back to the `--remote` URL for plain `github.com/org/repo` patterns).
 - **Timesheet notes** — intentionally kept out of the rendered bullets (too noisy), but exposed in `--json` under `yesterdayNotes` / `todayNotes` so AI agents can use them as enrichment context via the companion `/daily-scrum` Claude skill.
+
+**Smart selection (`--smart`)** — the spiritual successor to the original [SSW AutoScrum](https://github.com/AwesomeBlazor/AutoScrum). It sorts your PRs/assigned issues into **Yesterday / Today / Blockers** with these rules:
+
+- **In-progress lookback** — an open item counts as *yesterday* if you last touched it within the last 14 days (`scrum.yesterdayLookbackDays`), not just on the literal previous day. This keeps ongoing work visible across gaps and on the **first day of a new sprint**, where the previous day inside the sprint is empty.
+- **Configurable cutoff** — `scrum.cutoffTime` (in `~/.config/timepro-cli/config.json`, e.g. `"cutoffTime": "09:00:00"`; default = midnight) is the yesterday/today boundary. Work completed **before** it → Yesterday (done); **after** it (this morning) → Today (done) — so a PR merged at 09:30 before a 10:00 stand-up isn't lost.
+- **Weekend-aware** — a Monday scrum's "yesterday" spans back through Saturday/Sunday to the previous work day.
+- **Blockers** — items labelled `blocked` (or draft PRs) surface in their own section.
+
+**Custom templates** — override the rendered markdown/HTML body with your own (e.g. a French scrum for a Europe tenant). Drop a file in `~/.config/timepro-cli/`, resolved most-specific first:
+
+```
+daily-scrum.tenant.{tenantId}.client.{clientId}.{md|html}   # tenant + client
+daily-scrum.tenant.{tenantId}.{md|html}                     # tenant
+daily-scrum.{clientId}.{md|html}                            # client
+daily-scrum.{md|html}                                       # global
+                                                            # (else built-in default)
+```
+
+Templates own all the wording; the CLI substitutes `{{yesterday}}`, `{{today}}`, `{{blockers}}`, `{{date}}`, `{{client}}`, internal-block data, plus `{{#section}}…{{/section}}` / `{{^empty}}…{{/empty}}`. Use `--template-md-only` / `--template-html-only` to print the raw template so an agent can fill it from sources outside TimePro (pair with `--json`).
 
 **Clipboard notes**:
 
