@@ -1,0 +1,125 @@
+name: Release (NuGet)
+
+# Manually-triggered release of the `tp` .NET global tool.
+#
+# Versioning: major.minor comes from <VersionPrefix> in
+# src/SSW.TimePro.Cli/SSW.TimePro.Cli.csproj; the patch is this workflow's
+# GitHub run number (github.run_number), giving e.g. 0.1.42. Bump major/minor by
+# editing <VersionPrefix>. Note: every run of this workflow (including dry runs)
+# advances run_number, so release patch numbers can have small gaps.
+#
+# A dry run (default) builds, tests, audits, and packs, uploading the .nupkg as a
+# build artifact. Set dry_run=false to also create a GitHub Release.
+#
+# NOTE: Publishing to nuget.org is intentionally DISABLED for now. The push step
+# below is commented out; re-enable it (and add the NUGET_API_KEY secret) when the
+# package is ready to go public.
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Pack and upload the artifact without creating a GitHub Release."
+        required: false
+        default: true
+        type: boolean
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write # required to create GitHub Releases and tags
+
+    env:
+      PROJECT: src/SSW.TimePro.Cli/SSW.TimePro.Cli.csproj
+      SOLUTION: SSW.TimePro.Timesheets.Cli.slnx
+      CONFIGURATION: Release
+      PACKAGE_OUTPUT: ${{ github.workspace }}/artifacts/nupkg
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: bash scripts/cloud-setup.sh
+
+      - name: Compute version
+        id: version
+        run: |
+          base="$(grep -oP '(?<=<VersionPrefix>)[^<]+' "$PROJECT")"
+          if [[ -z "$base" ]]; then
+            echo "::error::Could not read <VersionPrefix> from $PROJECT" >&2
+            exit 1
+          fi
+          version="${base}.${{ github.run_number }}"
+          echo "value=$version" >> "$GITHUB_OUTPUT"
+          echo "Resolved version: $version (tag v$version)"
+
+      - name: Build
+        run: |
+          dotnet build "$SOLUTION" \
+            --configuration "$CONFIGURATION" \
+            --no-restore \
+            -p:Version=${{ steps.version.outputs.value }} \
+            -p:GitCommit=${{ github.sha }}
+
+      - name: Test
+        run: dotnet test "$SOLUTION" --configuration "$CONFIGURATION" --no-build --no-restore
+
+      - name: NuGet vulnerability audit
+        run: bash scripts/security/nuget-audit.sh
+
+      - name: Pack
+        run: |
+          dotnet pack "$PROJECT" \
+            --configuration "$CONFIGURATION" \
+            --no-build \
+            --output "$PACKAGE_OUTPUT" \
+            -p:Version=${{ steps.version.outputs.value }}
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nupkg
+          path: ${{ env.PACKAGE_OUTPUT }}/*.nupkg
+          if-no-files-found: error
+
+      - name: Create GitHub Release
+        if: ${{ inputs.dry_run == false }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: v${{ steps.version.outputs.value }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists; updating assets."
+            gh release upload "$TAG" "$PACKAGE_OUTPUT"/*.nupkg --clobber
+          else
+            gh release create "$TAG" "$PACKAGE_OUTPUT"/*.nupkg \
+              --title "$TAG" \
+              --target "${{ github.sha }}" \
+              --generate-notes
+          fi
+
+      # --- Publish to nuget.org (DISABLED) ---------------------------------------
+      # Re-enable this step to publish the package. Requires a NUGET_API_KEY repo
+      # secret scoped to push SSW.TimePro.Cli.
+      #
+      # - name: Push to NuGet
+      #   if: ${{ inputs.dry_run == false }}
+      #   env:
+      #     NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+      #   run: |
+      #     if [[ -z "${NUGET_API_KEY:-}" ]]; then
+      #       echo "::error::NUGET_API_KEY secret is not set." >&2
+      #       exit 1
+      #     fi
+      #     dotnet nuget push "$PACKAGE_OUTPUT"/*.nupkg \
+      #       --api-key "$NUGET_API_KEY" \
+      #       --source https://api.nuget.org/v3/index.json \
+      #       --skip-duplicate
+      # ---------------------------------------------------------------------------
