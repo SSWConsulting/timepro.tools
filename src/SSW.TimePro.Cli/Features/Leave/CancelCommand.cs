@@ -35,25 +35,41 @@ public class CancelCommand : AsyncCommand<CancelCommand.Settings>
 
     protected override async Task<int> ExecuteAsync(CommandContext context, Settings settings, CancellationToken cancellationToken)
     {
+        if (!Guid.TryParse(settings.LeaveId, out var leaveId))
+        {
+            // The cancel route is constrained to {id:guid}; reject non-GUID values before routing 404s.
+            WriteValidationError(settings.Json, "Leave ID must be a valid GUID");
+            return 1;
+        }
+
+        if (string.IsNullOrWhiteSpace(settings.Reason))
+        {
+            WriteValidationError(settings.Json, "--reason is required: a cancellation reason is mandatory for leave");
+            return 1;
+        }
+
+        var normalizedLeaveId = leaveId.ToString();
+        var cancellationReason = settings.Reason.Trim();
+
         if (!settings.Yes && !settings.Json)
         {
-            if (!AnsiConsole.Confirm($"Cancel leave request {settings.LeaveId}?", false))
+            if (!AnsiConsole.Confirm($"Cancel leave request {normalizedLeaveId}?", false))
                 return 1;
         }
 
         try
         {
             await _api.CancelLeaveAsync(
-                settings.LeaveId,
+                normalizedLeaveId,
                 new CancelLeaveRequest
                 {
-                    LeaveId = settings.LeaveId,
-                    CancellationReason = settings.Reason ?? string.Empty
+                    LeaveId = normalizedLeaveId,
+                    CancellationReason = cancellationReason
                 },
                 CancellationToken.None);
 
             if (settings.Json)
-                OutputHelper.WriteJson(new { success = true, leaveId = settings.LeaveId });
+                OutputHelper.WriteJson(new { success = true, leaveId = normalizedLeaveId });
             else
                 OutputHelper.WriteSuccess($"Leave request cancelled");
 
@@ -63,9 +79,15 @@ public class CancelCommand : AsyncCommand<CancelCommand.Settings>
         {
             if (settings.Json)
                 OutputHelper.WriteJsonError($"API error: {ex.Message}", ex.StatusCode);
-            else
-                OutputHelper.WriteError($"API error ({ex.StatusCode}): {ex.Message}");
+            OutputHelper.WriteError($"API error ({ex.StatusCode}): {ex.Message}");
             return 1;
         }
+    }
+
+    private static void WriteValidationError(bool json, string message)
+    {
+        if (json)
+            OutputHelper.WriteJsonError(message);
+        OutputHelper.WriteError(message);
     }
 }

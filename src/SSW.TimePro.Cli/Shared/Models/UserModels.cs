@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace SSW.TimePro.Cli.Shared.Models;
 
 /// <summary>
@@ -13,8 +15,10 @@ public class EmployeeIdResponse
 /// </summary>
 public class CurrentUserResponse
 {
+    [JsonPropertyName("id")]
     public string? EmployeeId { get; set; }
     public string? FirstName { get; set; }
+    [JsonPropertyName("surname")]
     public string? LastName { get; set; }
     public string? Email { get; set; }
     public string? DefaultRate { get; set; }

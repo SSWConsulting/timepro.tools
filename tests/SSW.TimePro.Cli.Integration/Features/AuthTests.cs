@@ -50,6 +50,7 @@ public class AuthTests : TestBase
 
         // Assert
         result.Should().NotBeNull();
-        result!.EmployeeId.Should().NotBeNullOrEmpty();
+        result!.EmployeeId.Should().Be("TST");
+        result.LastName.Should().Be("User");
     }
 }

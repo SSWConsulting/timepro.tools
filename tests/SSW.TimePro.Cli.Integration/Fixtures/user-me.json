@@ -1,7 +1,7 @@
 {
-  "employeeId": "TST",
+  "id": "TST",
   "firstName": "Test",
-  "lastName": "User",
+  "surname": "User",
   "email": "test@example.com",
   "defaultRate": "150.00"
 }

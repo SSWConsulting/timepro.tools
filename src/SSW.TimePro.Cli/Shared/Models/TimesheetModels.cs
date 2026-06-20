@@ -81,11 +81,12 @@ public class TimesheetRequest
     [System.Text.Json.Serialization.JsonPropertyName("sellPrice")]
     public decimal? SellPrice { get; set; }
 
-    [System.Text.Json.Serialization.JsonPropertyName("IsBillingTypeOverridden")]
-    public bool IsBillingTypeOverridden { get; set; }
-
     [System.Text.Json.Serialization.JsonPropertyName("isOverwriteRate")]
     public bool IsOverwriteRate { get; set; }
+
+    // SaveTimesheet defaults missing inputSource to TimePro; CLI writes should be attributed to API.
+    [System.Text.Json.Serialization.JsonPropertyName("inputSource")]
+    public int? InputSource { get; set; } = 3;
 
     // Server defaults a missing salesTaxPct to 0, producing $0 tax regardless of
     // billable type. The web UI sends this; the CLI must too. Leave null to let

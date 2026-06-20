@@ -74,6 +74,12 @@ public class CreateCommand : AsyncCommand<CreateCommand.Settings>
             return 1;
         }
 
+        if (string.IsNullOrWhiteSpace(settings.Note))
+        {
+            WriteValidationError(settings.Json, "--note is required: a reason/description is mandatory for leave");
+            return 1;
+        }
+
         var tenant = _tenantProvider.GetCurrentTenant();
         if (tenant is null || string.IsNullOrEmpty(tenant.EmployeeId))
         {
@@ -83,17 +89,6 @@ public class CreateCommand : AsyncCommand<CreateCommand.Settings>
 
         try
         {
-            // Resolve type ID
-            var leaveTypeId = await ResolveLeaveTypeAsync(settings.Type);
-            if (leaveTypeId is null)
-            {
-                OutputHelper.WriteError($"Unknown leave type: '{settings.Type}'. Use 'tp leave types' or a numeric ID.");
-                var types = await _api.GetLeaveTypesAsync(CancellationToken.None);
-                foreach (var t in types.Where(t => t.IsActive))
-                    AnsiConsole.MarkupLine($"  {t.Id}: {Markup.Escape(t.Name)}");
-                return 1;
-            }
-
             // Parse dates with timezone offset
             if (!DateTimeOffset.TryParse(settings.Start, out var startDate))
             {
@@ -119,6 +114,24 @@ public class CreateCommand : AsyncCommand<CreateCommand.Settings>
             {
                 // If end date was parsed but has no time component, set to 23:59
                 endDate = new DateTimeOffset(endDate.Date.AddHours(23).AddMinutes(59), endDate.Offset);
+            }
+
+            if (IsWeekend(startDate) || IsWeekend(endDate))
+            {
+                // LeaveCommandValidator rejects weekend boundaries; surface it before the API call.
+                WriteValidationError(settings.Json, "Leave start and end dates must be weekdays");
+                return 1;
+            }
+
+            // Resolve type ID
+            var leaveTypeId = await ResolveLeaveTypeAsync(settings.Type);
+            if (leaveTypeId is null)
+            {
+                OutputHelper.WriteError($"Unknown leave type: '{settings.Type}'. Use 'tp leave types' or a numeric ID.");
+                var types = await _api.GetLeaveTypesAsync(CancellationToken.None);
+                foreach (var t in types.Where(t => t.IsActive))
+                    AnsiConsole.MarkupLine($"  {t.Id}: {Markup.Escape(t.Name)}");
+                return 1;
             }
 
             var allDay = !settings.HalfDay;
@@ -159,7 +172,7 @@ public class CreateCommand : AsyncCommand<CreateCommand.Settings>
                 StartDate = startDate.ToString("o"),
                 EndDate = endDate.ToString("o"),
                 LeaveTypeId = leaveTypeId.Value,
-                Note = settings.Note,
+                Note = settings.Note.Trim(),
                 UserStartTime = userStartTime,
                 UserEndTime = userEndTime,
                 AllDay = allDay,
@@ -179,10 +192,22 @@ public class CreateCommand : AsyncCommand<CreateCommand.Settings>
         }
         catch (ApiException ex)
         {
+            if (settings.Json)
+                OutputHelper.WriteJsonError($"API error: {ex.Message}", ex.StatusCode);
             OutputHelper.WriteError($"API error ({ex.StatusCode}): {ex.Message}");
             return 1;
         }
     }
+
+    private static void WriteValidationError(bool json, string message)
+    {
+        if (json)
+            OutputHelper.WriteJsonError(message);
+        OutputHelper.WriteError(message);
+    }
+
+    private static bool IsWeekend(DateTimeOffset date) =>
+        date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
 
     private async Task<int?> ResolveLeaveTypeAsync(string typeInput)
     {

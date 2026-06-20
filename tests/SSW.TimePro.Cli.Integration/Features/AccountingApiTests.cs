@@ -290,10 +290,17 @@ public class AccountingApiTests : TestBase
                 .WithBody("""[{"TimeId":42,"EmpId":"TST","ClientId":"NWIND","ProjectId":"1I776Q","TotalTime":4,"BillableAmount":400}]""")
         );
 
-        var rows = await ApiClient.GetUnallocatedTimesheetsByClientAsync("NWIND", null, null, null, null, CancellationToken.None);
+        var rows = await ApiClient.GetUnallocatedTimesheetsByClientAsync("NWIND", 100, 20, "DateCreated", "desc", CancellationToken.None);
 
         rows.Should().HaveCount(1);
         rows[0].BillableAmount.Should().Be(400);
+        var request = WireMock.LogEntries.Single().RequestMessage!;
+        var url = request.Url!.ToString();
+        url.Should().Contain("clientId=NWIND");
+        url.Should().NotContain("pageSize=");
+        url.Should().NotContain("skip=");
+        url.Should().NotContain("sortField=");
+        url.Should().NotContain("direction=");
     }
 
     // ────── Recurring ──────

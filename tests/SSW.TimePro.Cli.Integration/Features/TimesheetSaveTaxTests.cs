@@ -38,12 +38,48 @@ public class TimesheetSaveTaxTests : TestBase
         await ApiClient.CreateTimesheetAsync(request, TestContext.Current.CancellationToken);
 
         var saveCall = WireMock.LogEntries
-            .Single(e => e.RequestMessage.AbsolutePath == "/api/Timesheets/SaveTimesheet");
-        using var doc = JsonDocument.Parse(saveCall.RequestMessage.Body!);
+            .Single(e => e.RequestMessage!.AbsolutePath == "/api/Timesheets/SaveTimesheet");
+        using var doc = JsonDocument.Parse(saveCall.RequestMessage!.Body!);
         doc.RootElement.GetProperty("salesTaxPct").GetDecimal().Should().Be(0.1m);
 
         WireMock.LogEntries
-            .Should().Contain(e => e.RequestMessage.AbsolutePath == "/api/v2/clients/NWIND/taxrates");
+            .Should().Contain(e => e.RequestMessage!.AbsolutePath == "/api/v2/clients/NWIND/taxrates");
+    }
+
+    [Fact]
+    public async Task CreateTimesheet_WhenClientHasNoTaxRate_LeavesSalesTaxPctForServerDefault()
+    {
+        WireMock.Given(Request.Create()
+                .WithPath("/api/v2/clients/NWIND/taxrates")
+                .UsingGet())
+            .RespondWith(Response.Create()
+                .WithStatusCode(404));
+
+        WireMock.Given(Request.Create()
+                .WithPath("/api/Timesheets/SaveTimesheet")
+                .UsingPost())
+            .RespondWith(Response.Create()
+                .WithStatusCode(200)
+                .WithHeader("Content-Type", "application/json")
+                .WithBody("{\"Success\":true,\"TimesheetId\":123}"));
+
+        var request = new TimesheetRequest
+        {
+            EmpId = "TST",
+            ClientId = "NWIND",
+            ProjectId = "1I776Q",
+            BillableId = "B"
+        };
+
+        await ApiClient.CreateTimesheetAsync(request, TestContext.Current.CancellationToken);
+
+        var saveCall = WireMock.LogEntries
+            .Single(e => e.RequestMessage!.AbsolutePath == "/api/Timesheets/SaveTimesheet");
+        using var doc = JsonDocument.Parse(saveCall.RequestMessage!.Body!);
+        doc.RootElement.TryGetProperty("salesTaxPct", out _).Should().BeFalse();
+
+        WireMock.LogEntries
+            .Should().Contain(e => e.RequestMessage!.AbsolutePath == "/api/v2/clients/NWIND/taxrates");
     }
 
     [Fact]
@@ -74,8 +110,8 @@ public class TimesheetSaveTaxTests : TestBase
         await ApiClient.UpdateTimesheetAsync(request, TestContext.Current.CancellationToken);
 
         var saveCall = WireMock.LogEntries
-            .Single(e => e.RequestMessage.AbsolutePath == "/api/Timesheets/SaveTimesheet");
-        using var doc = JsonDocument.Parse(saveCall.RequestMessage.Body!);
+            .Single(e => e.RequestMessage!.AbsolutePath == "/api/Timesheets/SaveTimesheet");
+        using var doc = JsonDocument.Parse(saveCall.RequestMessage!.Body!);
         doc.RootElement.GetProperty("salesTaxPct").GetDecimal().Should().Be(0.1m);
     }
 
@@ -100,12 +136,14 @@ public class TimesheetSaveTaxTests : TestBase
         await ApiClient.CreateTimesheetAsync(request, TestContext.Current.CancellationToken);
 
         WireMock.LogEntries
-            .Should().NotContain(e => e.RequestMessage.AbsolutePath.Contains("/taxrates"));
+            .Should().NotContain(e => e.RequestMessage!.AbsolutePath.Contains("/taxrates"));
 
         var saveCall = WireMock.LogEntries
-            .Single(e => e.RequestMessage.AbsolutePath == "/api/Timesheets/SaveTimesheet");
-        using var doc = JsonDocument.Parse(saveCall.RequestMessage.Body!);
+            .Single(e => e.RequestMessage!.AbsolutePath == "/api/Timesheets/SaveTimesheet");
+        using var doc = JsonDocument.Parse(saveCall.RequestMessage!.Body!);
         doc.RootElement.GetProperty("salesTaxPct").GetDecimal().Should().Be(0.15m);
+        doc.RootElement.GetProperty("inputSource").GetInt32().Should().Be(3);
+        doc.RootElement.TryGetProperty("IsBillingTypeOverridden", out _).Should().BeFalse();
     }
 
     [Fact]
@@ -123,6 +161,6 @@ public class TimesheetSaveTaxTests : TestBase
         await ApiClient.CreateTimesheetAsync(request, TestContext.Current.CancellationToken);
 
         WireMock.LogEntries
-            .Should().NotContain(e => e.RequestMessage.AbsolutePath.Contains("/taxrates"));
+            .Should().NotContain(e => e.RequestMessage!.AbsolutePath.Contains("/taxrates"));
     }
 }

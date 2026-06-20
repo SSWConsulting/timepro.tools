@@ -199,7 +199,15 @@ public class TimeProApiClient : ITimeProApiClient
     public async Task<decimal?> GetClientTaxRateAsync(string clientId, CancellationToken ct = default)
     {
         var url = $"/api/v2/clients/{Uri.EscapeDataString(clientId)}/taxrates";
-        return await GetAsync<decimal?>(url, ct);
+        try
+        {
+            return await GetAsync<decimal?>(url, ct);
+        }
+        catch (ApiException ex) when (ex.StatusCode == 404)
+        {
+            // The tax-rate endpoint returns 404 when no client tax rate exists; SaveTimesheet applies the default.
+            return null;
+        }
     }
 
     // ───────────────────────── Appointments ─────────────────────────
@@ -236,7 +244,8 @@ public class TimeProApiClient : ITimeProApiClient
         string employeeId, DateOnly date, CancellationToken ct = default)
     {
         var url = $"/api/Timesheets/RefreshSuggestedTimesheets?employeeID={Uri.EscapeDataString(employeeId)}&timesheetDate={date:yyyy-MM-dd}T00:00:00";
-        return await GetAsync<List<TimesheetItem>>(url, ct) ?? [];
+        // The refresh endpoint returns Ok() with no body; callers only need the refresh side effect.
+        return await GetAsyncAllowEmptyBody<List<TimesheetItem>>(url, ct) ?? [];
     }
 
     public async Task<TimesheetResponse?> AcceptSuggestedTimesheetAsync(
@@ -337,7 +346,8 @@ public class TimeProApiClient : ITimeProApiClient
     public async Task<List<ProjectSummaryItem>> GetProjectsSummaryAsync(
         string employeeId, DateOnly startDate, DateOnly endDate, CancellationToken ct = default)
     {
-        var url = $"/api/Timesheets/GetProjectsSummary?employeeID={Uri.EscapeDataString(employeeId)}&startDate={startDate:yyyy-MM-dd}&endDate={endDate:yyyy-MM-dd}&currentDate={endDate:yyyy-MM-dd}";
+        // Server owns the summary window from currentDate; start/end query params are ignored.
+        var url = $"/api/Timesheets/GetProjectsSummary?employeeID={Uri.EscapeDataString(employeeId)}&currentDate={endDate:yyyy-MM-dd}";
         return await GetAsync<List<ProjectSummaryItem>>(url, ct) ?? [];
     }
 
@@ -493,12 +503,8 @@ public class TimeProApiClient : ITimeProApiClient
     public async Task<List<InvoiceTimesheet>> GetUnallocatedTimesheetsByClientAsync(
         string clientId, int? pageSize, int? skip, string? sortField, string? direction, CancellationToken ct = default)
     {
-        // Prefer the v2 named endpoint (returns shaped data the same as Allocated).
+        // The v2 named endpoint accepts clientId (+ invoiceID); paging/sort params are ignored.
         var qs = new List<string> { $"clientId={Uri.EscapeDataString(clientId)}" };
-        if (pageSize.HasValue) qs.Add($"pageSize={pageSize.Value}");
-        if (skip.HasValue) qs.Add($"skip={skip.Value}");
-        if (!string.IsNullOrEmpty(sortField)) qs.Add($"sortField={Uri.EscapeDataString(sortField)}");
-        if (!string.IsNullOrEmpty(direction)) qs.Add($"direction={Uri.EscapeDataString(direction)}");
 
         return await GetAsync<List<InvoiceTimesheet>>(
             $"/api/v2/Timesheets/WithNames/Unallocated?{string.Join("&", qs)}", ct) ?? [];
@@ -677,6 +683,21 @@ public class TimeProApiClient : ITimeProApiClient
         await EnsureSuccessAsync(response, ct);
 
         return await response.Content.ReadFromJsonAsync<T>(ReadJsonOptions, ct);
+    }
+
+    private async Task<T?> GetAsyncAllowEmptyBody<T>(string relativeUrl, CancellationToken ct)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, relativeUrl);
+        ConfigureRequest(request);
+
+        using var response = await _http.SendAsync(request, ct);
+        await EnsureSuccessAsync(response, ct);
+
+        var content = await response.Content.ReadAsStringAsync(ct);
+        if (string.IsNullOrWhiteSpace(content))
+            return default;
+
+        return JsonSerializer.Deserialize<T>(content, ReadJsonOptions);
     }
 
     private async Task<byte[]> GetBytesAsync(string relativeUrl, CancellationToken ct)
