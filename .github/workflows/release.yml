@@ -51,7 +51,10 @@ jobs:
       - name: Compute version
         id: version
         run: |
-          base="$(grep -oP '(?<=<VersionPrefix>)[^<]+' "$PROJECT")"
+          # Match only the real element (anchored on its closing tag) and take the
+          # first hit, so a comment that mentions the <VersionPrefix> token can't leak
+          # extra lines into $base.
+          base="$(grep -oP '(?<=<VersionPrefix>)[^<]+(?=</VersionPrefix>)' "$PROJECT" | head -n1)"
           if [[ -z "$base" ]]; then
             echo "::error::Could not read <VersionPrefix> from $PROJECT" >&2
             exit 1
