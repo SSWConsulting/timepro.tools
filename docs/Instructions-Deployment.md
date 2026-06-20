@@ -4,7 +4,36 @@ TimePro Tools is a local CLI and MCP host. There is no hosted application, datab
 
 Deployment means packaging the `tp` .NET global tool and installing it where it will run.
 
-## Release Package
+## Installing (end users)
+
+The supported way to install or upgrade `tp` is the install script. It verifies
+the .NET 10 SDK is present, downloads the latest GitHub Release's `.nupkg`, and
+installs it as a global tool (updating in place if already installed). Re-run it
+any time to upgrade.
+
+**macOS / Linux:**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/SSWConsulting/timepro.tools/main/scripts/install.sh | bash
+```
+
+**Windows (PowerShell):**
+
+```powershell
+irm https://raw.githubusercontent.com/SSWConsulting/timepro.tools/main/scripts/install.ps1 | iex
+```
+
+Both scripts are self-contained — they only need the .NET 10 SDK and a network
+connection. Set `GITHUB_TOKEN` to raise the GitHub API rate limit if needed. To
+remove the tool: `dotnet tool uninstall -g SSW.TimePro.Cli`.
+
+> The script installs from a **published GitHub Release**. If no non-dry-run
+> release exists yet, cut one first (see [Release via GitHub Actions](#release-via-github-actions)).
+
+## Building a release package (from source)
+
+This is the manual flow contributors use to produce and test a package locally;
+end users should prefer the install script above.
 
 1. Update the package version in `src/SSW.TimePro.Cli/SSW.TimePro.Cli.csproj`.
 2. Run the test suite:
@@ -23,17 +52,20 @@ dotnet pack src/SSW.TimePro.Cli/ -c Release -o artifacts/nupkg
 4. Install or update from the generated package source:
 
 ```bash
-dotnet tool uninstall -g SSW.TimePro.Cli
-dotnet tool install -g --add-source artifacts/nupkg SSW.TimePro.Cli
+dotnet tool update -g --add-source artifacts/nupkg SSW.TimePro.Cli
 ```
 
 ## Distribution
 
 Current supported distribution paths:
 
-- Local or internal package installation via `dotnet tool install -g --add-source`.
+- **Install script** (`scripts/install.sh` / `scripts/install.ps1`) — pulls the
+  latest GitHub Release and installs/updates the global tool. This is the path
+  end users should use.
 - GitHub Releases (with the `.nupkg` attached) via the **Release (NuGet)** GitHub
-  Actions workflow (see below).
+  Actions workflow (see below). The install script consumes these releases.
+- Local or internal package installation via `dotnet tool update -g --add-source`
+  (the from-source flow above).
 
 > Publishing to nuget.org is currently **disabled**. The push step in the workflow
 > is commented out; the workflow builds, packs, and cuts a GitHub Release instead.
