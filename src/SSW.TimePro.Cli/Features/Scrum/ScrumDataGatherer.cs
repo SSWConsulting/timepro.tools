@@ -14,9 +14,9 @@ public class ScrumDataGatherer
 {
     private readonly ITimeProApiClient _api;
     private readonly IConfigService _config;
-    private readonly GhCli _gh;
+    private readonly IGhCli _gh;
 
-    public ScrumDataGatherer(ITimeProApiClient api, IConfigService config, GhCli gh)
+    public ScrumDataGatherer(ITimeProApiClient api, IConfigService config, IGhCli gh)
     {
         _api = api;
         _config = config;
@@ -26,9 +26,10 @@ public class ScrumDataGatherer
     public async Task<ScrumModel> BuildAsync(
         string employeeId,
         DateOnly today,
-        string? projectFilter,
+        IReadOnlyList<string>? projectOverrides,
         bool? forceInternal,
-        CancellationToken ct)
+        CancellationToken ct,
+        bool smartSelection = false)
     {
         var global = _config.LoadGlobalConfig();
         var mappings = _config.LoadRepoMappings();
@@ -37,14 +38,44 @@ public class ScrumDataGatherer
         var todaysSheets = await _api.GetTimesheetsAsync(employeeId, today, ct);
         var realToday = todaysSheets.Where(t => !t.IsSuggested && !IsLeave(t)).ToList();
 
-        // Optional project filter
-        var todaysProjects = (projectFilter is not null
-                ? realToday.Where(t => string.Equals(t.ProjectId, projectFilter, StringComparison.OrdinalIgnoreCase))
-                : realToday)
-            .Select(t => (t.ClientId, t.ProjectId, t.Client, t.Project))
+        // Projects to build the scrum around. By default these are auto-detected
+        // from today's logged timesheets. When --project is passed it OVERRIDES
+        // that: each requested project is included even if nothing is logged for
+        // it yet (its client/name come from the repo mapping), so you can scrum
+        // projects you work on but haven't logged/suggested.
+        var autoDetected = realToday
+            .Select(t => (ClientId: (string?)t.ClientId, ProjectId: (string?)t.ProjectId,
+                          Client: (string?)t.Client, Project: (string?)t.Project))
             .Where(t => t.ProjectId is not null)
             .Distinct()
             .ToList();
+
+        List<(string? ClientId, string? ProjectId, string? Client, string? Project)> todaysProjects;
+        if (projectOverrides is { Count: > 0 })
+        {
+            todaysProjects = [];
+            foreach (var id in projectOverrides)
+            {
+                var logged = autoDetected.FirstOrDefault(p =>
+                    string.Equals(p.ProjectId, id, StringComparison.OrdinalIgnoreCase));
+                if (logged.ProjectId is not null)
+                {
+                    todaysProjects.Add(logged);
+                    continue;
+                }
+
+                // Not logged today — synthesise from the repo mapping so its
+                // GitHub activity can still be gathered.
+                var map = mappings.FirstOrDefault(m =>
+                    string.Equals(m.ProjectId, id, StringComparison.OrdinalIgnoreCase));
+                todaysProjects.Add((map?.ClientId, id, map?.ProjectName, map?.ProjectName));
+            }
+            todaysProjects = todaysProjects.Distinct().ToList();
+        }
+        else
+        {
+            todaysProjects = autoDetected;
+        }
 
         // 2. Classify internal vs external using bookings for today.
         //    External = a non-SSW booking OR a non-SSW timesheet exists.
@@ -58,6 +89,7 @@ public class ScrumDataGatherer
         {
             TodayDate = today,
             IsInternal = isInternal,
+            PrimaryClientId = todaysProjects.FirstOrDefault().ClientId,
             PrimaryClientName = todaysProjects.FirstOrDefault().Client
         };
 
@@ -71,23 +103,6 @@ public class ScrumDataGatherer
                          .Select(t => t.Notes!.Trim()))
             {
                 model.TodayNotes.Add(note);
-            }
-
-            // Open PRs by me in the issues repo (if mapped)
-            var issuesRepo = ResolveIssuesRepo(mappings, proj.ClientId, proj.ProjectId);
-            if (issuesRepo is not null)
-            {
-                var prs = _gh.ListMyPullRequests(issuesRepo);
-                foreach (var pr in prs.Where(p => string.Equals(p.State, "OPEN", StringComparison.OrdinalIgnoreCase)))
-                {
-                    model.Today.Add(new ScrumItem
-                    {
-                        Kind = "PBI",
-                        Title = pr.Title,
-                        Url = pr.Url,
-                        Reference = $"#{pr.Number}"
-                    });
-                }
             }
         }
 
@@ -107,15 +122,79 @@ public class ScrumDataGatherer
                 {
                     model.YesterdayNotes.Add(note);
                 }
+            }
+        }
 
-                // Bleed-back: merged PRs by me since the last-last project day, up to yesterday.
-                var issuesRepo = ResolveIssuesRepo(mappings, proj.ClientId, proj.ProjectId);
-                if (issuesRepo is not null)
+        // 5. GitHub activity — populate Today/Yesterday/Blockers bullets.
+        //    --smart: uses ScrumItemSelector (AutoScrum-inspired heuristics).
+        //    default: original behaviour (open PRs for today, merged PRs for yesterday).
+        var previousWorkDay = ScrumItemSelector.PreviousWorkDay(today);
+        // Yesterday/today boundary. Defaults to midnight (null); when a cutoff time
+        // is configured (e.g. 09:00) work completed this morning before stand-up
+        // still appears as done today.
+        DateTimeOffset? cutoff = global.Scrum.CutoffTime is { } cutoffTime
+            ? new DateTimeOffset(today.ToDateTime(cutoffTime, DateTimeKind.Local))
+            : null;
+
+        foreach (var proj in todaysProjects)
+        {
+            var issuesRepo = ResolveIssuesRepo(mappings, proj.ClientId, proj.ProjectId);
+            if (issuesRepo is null) continue;
+
+            var rawPrs = _gh.ListMyPullRequests(issuesRepo);
+
+            if (smartSelection)
+            {
+                var rawIssues = _gh.ListMyAssignedIssues(issuesRepo);
+
+                // Map to selector's input types (GhCli doesn't carry labels/draft yet —
+                // extend GhCli in a follow-up; for now use empty labels and isDraft=false).
+                var selectorPrs = rawPrs.Select(p => new ScrumItemSelector.GitHubPr(
+                    Number: p.Number,
+                    Title: p.Title,
+                    Url: p.Url,
+                    State: p.State.ToUpperInvariant(),
+                    IsDraft: false,
+                    MergedAt: p.MergedAt,
+                    UpdatedAt: p.UpdatedAt,
+                    Labels: []));
+
+                var selectorIssues = rawIssues.Select(i => new ScrumItemSelector.GitHubIssue(
+                    Number: i.Number,
+                    Title: i.Title,
+                    Url: i.Url,
+                    State: "OPEN",   // gh issue list --state open returns open issues only
+                    ClosedAt: null,
+                    UpdatedAt: null,
+                    Labels: []));
+
+                var selection = ScrumItemSelector.Select(
+                    today, previousWorkDay, selectorPrs, selectorIssues,
+                    cutoff, global.Scrum.YesterdayLookbackDays);
+
+                foreach (var item in selection.Yesterday) model.Yesterday.Add(item);
+                foreach (var item in selection.Today) model.Today.Add(item);
+                foreach (var item in selection.Blockers) model.Blockers.Add(item);
+            }
+            else
+            {
+                // Original behaviour: open PRs → Today; merged PRs in 7-day window → Yesterday.
+                foreach (var pr in rawPrs.Where(p => string.Equals(p.State, "OPEN", StringComparison.OrdinalIgnoreCase)))
+                {
+                    model.Today.Add(new ScrumItem
+                    {
+                        Kind = "PBI",
+                        Title = pr.Title,
+                        Url = pr.Url,
+                        Reference = $"#{pr.Number}"
+                    });
+                }
+
+                if (yesterday is not null)
                 {
                     // Window start: the day BEFORE the previous-previous project day, or 7 days back.
                     var windowStart = today.AddDays(-7);
-                    var prs = _gh.ListMyPullRequests(issuesRepo);
-                    var mergedInWindow = prs
+                    var mergedInWindow = rawPrs
                         .Where(p => p.MergedAt.HasValue)
                         .Where(p => DateOnly.FromDateTime(p.MergedAt!.Value.LocalDateTime) >= windowStart
                                  && DateOnly.FromDateTime(p.MergedAt!.Value.LocalDateTime) <= yesterday.Value)

@@ -21,8 +21,19 @@ public class ScrumModel
     /// </summary>
     public string? PrimaryClientName { get; set; }
 
+    /// <summary>
+    /// Primary client id for resolving scoped daily scrum templates.
+    /// </summary>
+    public string? PrimaryClientId { get; set; }
+
     public List<ScrumItem> Yesterday { get; set; } = [];
     public List<ScrumItem> Today { get; set; } = [];
+
+    /// <summary>
+    /// Items that are actively blocked. Populated only when <c>--smart</c> is used.
+    /// Blockers also appear in <see cref="Today"/> for completeness.
+    /// </summary>
+    public List<ScrumItem> Blockers { get; set; } = [];
 
     /// <summary>
     /// Raw timesheet notes for yesterday, keyed by project name. Not

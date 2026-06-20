@@ -61,6 +61,14 @@ public class ScrumRenderer
             foreach (var item in m.Today)
                 sb.AppendLine(RenderItemTerminal(item));
 
+        if (m.Blockers.Count > 0)
+        {
+            sb.AppendLine();
+            sb.AppendLine("Blocked:");
+            foreach (var item in m.Blockers)
+                sb.AppendLine(RenderItemTerminal(item));
+        }
+
         sb.AppendLine();
         if (!string.IsNullOrEmpty(_config.FooterUrl))
             sb.AppendLine(Dim($"<This email was sent as per {_config.FooterUrl}>"));
@@ -113,6 +121,14 @@ public class ScrumRenderer
             foreach (var item in m.Today)
                 sb.AppendLine(RenderItemText(item, markdown));
 
+        if (m.Blockers.Count > 0)
+        {
+            sb.AppendLine();
+            sb.AppendLine("Blocked:");
+            foreach (var item in m.Blockers)
+                sb.AppendLine(RenderItemText(item, markdown));
+        }
+
         sb.AppendLine();
         if (!string.IsNullOrEmpty(_config.FooterUrl))
             sb.AppendLine($"<This email was sent as per {_config.FooterUrl}>");
@@ -161,6 +177,15 @@ public class ScrumRenderer
                 sb.Append(RenderItemHtml(item));
         sb.Append("</ul>");
 
+        if (m.Blockers.Count > 0)
+        {
+            sb.Append("<p>Blocked:</p>");
+            sb.Append("<ul>");
+            foreach (var item in m.Blockers)
+                sb.Append(RenderItemHtml(item));
+            sb.Append("</ul>");
+        }
+
         if (!string.IsNullOrEmpty(_config.FooterUrl))
             sb.Append($"<p><em>&lt;This email was sent as per <a href=\"{WebUtility.HtmlEncode(_config.FooterUrl)}\">{WebUtility.HtmlEncode(_config.FooterUrl)}</a>&gt;</em></p>");
 
@@ -181,7 +206,7 @@ public class ScrumRenderer
         return $"- {prefix} – {item.Title}";
     }
 
-    private static string RenderItemText(ScrumItem item, bool markdown)
+    internal static string RenderItemText(ScrumItem item, bool markdown)
     {
         var parts = new List<string>();
         if (!string.IsNullOrEmpty(item.Status)) parts.Add(item.Status);
@@ -196,7 +221,7 @@ public class ScrumRenderer
         return $"- {prefix} – {item.Title}";
     }
 
-    private static string RenderItemHtml(ScrumItem item)
+    internal static string RenderItemHtml(ScrumItem item)
     {
         var parts = new List<string>();
         if (!string.IsNullOrEmpty(item.Status)) parts.Add(WebUtility.HtmlEncode(item.Status));
