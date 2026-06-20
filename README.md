@@ -138,7 +138,7 @@ tp ts get 2026-03-12       # Specific date
 | `tp map remove PATH` | Remove a repo mapping |
 | `tp query` | Query timesheets across employees/projects (`--group-by`, `--json`) |
 | `tp scrum` | Generate a daily scrum email from timesheets + GitHub (`-i`, `--copy --format rich\|markdown\|plain`, `--json`) |
-| `tp skills create TARGET` | Generate agent skill files (`--accounting` for the accountant CLI skill) |
+| `tp skills create TARGET [--global] [--accounting]` | Generate unified agent skill files (`--accounting` for the accountant CLI skill) |
 | `tp user me` | Show current user info |
 | `tp blog list` | Latest blog posts (`--mine`, `--limit N`, `--all`) |
 | `tp mcp` | Start MCP server (stdio); `--tenant NAME` binds the session to a specific tenant config without changing the global active tenant |
@@ -284,7 +284,7 @@ tp map set ~/Developer/git/Northwind/traders-mobile \
 ```
 
 Detection supports:
-- **Exact path** — `~/Developer/git/SSW.TimePRO`
+- **Exact path** — `~/Developer/git/Northwind/traders-app`
 - **Glob patterns** — `~/Developer/git/Northwind/*`
 - **Git remote URL** — `github.com/Northwind/traders-app`
 - **Git worktrees** — Codex/Claude worktrees at `~/.codex/worktrees/` or `~/.claude-worktrees/` resolve to the main repo automatically
@@ -310,13 +310,21 @@ When creating timesheets, location is auto-applied based on the day of week.
 Generate agent skill files for a project:
 
 ```bash
-tp skills create .agents           # Local to current project
-tp skills create .claude --global  # Global (all projects)
+tp skills create .agents                         # Generate unified skills for this project
+tp skills create .claude --global                # Generate unified skills under global config
+tp skills create .agents --accounting            # Also generate the accounting CLI skill
 ```
 
-The generated file includes:
+Generated skills use one format for Claude, Codex, and `.agents` installs:
+- Each skill is written to `skills/<name>/SKILL.md`.
+- YAML frontmatter includes `name`, `description`, and `allowed-tools`.
+- Deterministic read-only commands are listed in a plain `Run these first` bash block.
+- No load-time command execution syntax is emitted.
+
+The generated skills include:
 - Quick reference for all `tp` commands
 - Workflow for entering a full week of timesheets
+- `tp project recent --json` guidance to pick the likely project first
 - `gh` commands pre-filled with the repo slug for issue/PR lookup
 - Description format guide with PR and issue number examples
 - Project context (client, project, GitHub repo) auto-detected from repo mapping
