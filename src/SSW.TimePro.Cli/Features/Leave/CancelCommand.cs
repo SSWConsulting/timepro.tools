@@ -77,9 +77,12 @@ public class CancelCommand : AsyncCommand<CancelCommand.Settings>
         }
         catch (ApiException ex)
         {
+            // Surface the server's response body so failures (incl. 500s) are diagnosable.
+            var detail = ApiErrorParser.ExtractDetail(ex.ResponseBody);
             if (settings.Json)
-                OutputHelper.WriteJsonError($"API error: {ex.Message}", ex.StatusCode);
-            OutputHelper.WriteError($"API error ({ex.StatusCode}): {ex.Message}");
+                OutputHelper.WriteJsonError($"API error: {ex.Message}", ex.StatusCode, detail);
+            OutputHelper.WriteError($"API error ({ex.StatusCode}): {ex.Message}"
+                + (detail is not null ? $" — {detail}" : ""));
             return 1;
         }
     }
