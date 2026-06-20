@@ -26,9 +26,9 @@ public class ScrumCommand : AsyncCommand<ScrumCommand.Settings>
         [Description("Reference date for 'today' (yyyy-MM-dd). Defaults to today")]
         public string? Date { get; set; }
 
-        [CommandOption("--project <PROJECT>")]
-        [Description("Only include this project ID in the scrum")]
-        public string? ProjectId { get; set; }
+        [CommandOption("--project|--projects <PROJECT>")]
+        [Description("Project ID(s) to include (repeatable, or comma-separated). Overrides auto-detection from timesheets — use to include projects you work on but haven't logged/suggested yet.")]
+        public string[]? Projects { get; set; }
 
         [CommandOption("--internal")]
         [Description("Force internal daily scrum format (even if client bookings exist)")]
@@ -107,11 +107,17 @@ public class ScrumCommand : AsyncCommand<ScrumCommand.Settings>
 
         bool? forceInternal = settings.ForceInternal ? true : settings.ForceExternal ? false : null;
 
+        // Allow both repeated flags (--project A --project B) and comma-separated (--project A,B).
+        var projectOverrides = settings.Projects?
+            .SelectMany(p => p.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
         var gatherer = new ScrumDataGatherer(_api, _config, new GhCli());
         ScrumModel model;
         try
         {
-            model = await gatherer.BuildAsync(tenant.EmployeeId, today, settings.ProjectId, forceInternal, CancellationToken.None, settings.Smart);
+            model = await gatherer.BuildAsync(tenant.EmployeeId, today, projectOverrides, forceInternal, CancellationToken.None, settings.Smart);
         }
         catch (ApiException ex)
         {

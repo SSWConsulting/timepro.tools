@@ -26,7 +26,7 @@ public class ScrumDataGatherer
     public async Task<ScrumModel> BuildAsync(
         string employeeId,
         DateOnly today,
-        string? projectFilter,
+        IReadOnlyList<string>? projectOverrides,
         bool? forceInternal,
         CancellationToken ct,
         bool smartSelection = false)
@@ -38,14 +38,44 @@ public class ScrumDataGatherer
         var todaysSheets = await _api.GetTimesheetsAsync(employeeId, today, ct);
         var realToday = todaysSheets.Where(t => !t.IsSuggested && !IsLeave(t)).ToList();
 
-        // Optional project filter
-        var todaysProjects = (projectFilter is not null
-                ? realToday.Where(t => string.Equals(t.ProjectId, projectFilter, StringComparison.OrdinalIgnoreCase))
-                : realToday)
-            .Select(t => (t.ClientId, t.ProjectId, t.Client, t.Project))
+        // Projects to build the scrum around. By default these are auto-detected
+        // from today's logged timesheets. When --project is passed it OVERRIDES
+        // that: each requested project is included even if nothing is logged for
+        // it yet (its client/name come from the repo mapping), so you can scrum
+        // projects you work on but haven't logged/suggested.
+        var autoDetected = realToday
+            .Select(t => (ClientId: (string?)t.ClientId, ProjectId: (string?)t.ProjectId,
+                          Client: (string?)t.Client, Project: (string?)t.Project))
             .Where(t => t.ProjectId is not null)
             .Distinct()
             .ToList();
+
+        List<(string? ClientId, string? ProjectId, string? Client, string? Project)> todaysProjects;
+        if (projectOverrides is { Count: > 0 })
+        {
+            todaysProjects = [];
+            foreach (var id in projectOverrides)
+            {
+                var logged = autoDetected.FirstOrDefault(p =>
+                    string.Equals(p.ProjectId, id, StringComparison.OrdinalIgnoreCase));
+                if (logged.ProjectId is not null)
+                {
+                    todaysProjects.Add(logged);
+                    continue;
+                }
+
+                // Not logged today — synthesise from the repo mapping so its
+                // GitHub activity can still be gathered.
+                var map = mappings.FirstOrDefault(m =>
+                    string.Equals(m.ProjectId, id, StringComparison.OrdinalIgnoreCase));
+                todaysProjects.Add((map?.ClientId, id, map?.ProjectName, map?.ProjectName));
+            }
+            todaysProjects = todaysProjects.Distinct().ToList();
+        }
+        else
+        {
+            todaysProjects = autoDetected;
+        }
 
         // 2. Classify internal vs external using bookings for today.
         //    External = a non-SSW booking OR a non-SSW timesheet exists.
