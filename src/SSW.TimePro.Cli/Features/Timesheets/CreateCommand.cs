@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Globalization;
+using SSW.TimePro.Cli.Features.Rates;
 using SSW.TimePro.Cli.Infrastructure.ApiClient;
 using SSW.TimePro.Cli.Infrastructure.Config;
 using SSW.TimePro.Cli.Infrastructure.Output;
@@ -66,6 +67,10 @@ public class CreateCommand : AsyncCommand<CreateCommand.Settings>
         [Description("Skip confirmation prompt")]
         public bool Yes { get; set; }
 
+        [CommandOption("--reject-if-rate-expired")]
+        [Description("Fail (with recovery guidance) instead of creating a rate when the client rate is expired or not set")]
+        public bool RejectIfRateExpired { get; set; }
+
         [CommandOption("--json")]
         [Description("Output as JSON")]
         public bool Json { get; set; }
@@ -113,25 +118,30 @@ public class CreateCommand : AsyncCommand<CreateCommand.Settings>
 
         location = LocationResolver.Resolve(location ?? "SSW");
 
+        var billableId = settings.Billable ?? "B";
+
         try
         {
-            // Check rate before creating
+            // Resolve the sell price from the client rate. When no active rate exists the API rejects
+            // the timesheet (it can't derive a sell price), so offer to set one before continuing.
             var rate = await _api.GetClientRateAsync(
                 tenant.EmployeeId, settings.ClientId, date, CancellationToken.None);
 
-            if (rate is not null && !string.IsNullOrEmpty(rate.ExpiryDate))
+            var rateActive = rate?.Rate is not null
+                && (string.IsNullOrEmpty(rate.ExpiryDate) || RateResolver.IsActive(DateTime.Parse(rate.ExpiryDate), date));
+
+            decimal? sellPrice;
+            if (rateActive)
             {
-                var expiry = DateTime.Parse(rate.ExpiryDate);
-                if (expiry < DateTime.Today)
-                {
-                    OutputHelper.WriteWarning(
-                        $"Rate for client '{settings.ClientId}' expired on {rate.ExpiryDate}. Contact admin to renew.");
-                    if (!settings.Yes)
-                    {
-                        if (!AnsiConsole.Confirm("Continue anyway?", false))
-                            return 1;
-                    }
-                }
+                sellPrice = RateResolver.SellPriceFor(billableId, rate!.Rate ?? 0m, rate.PrepaidRate ?? 0m);
+            }
+            else
+            {
+                sellPrice = await ResolveMissingRateAsync(
+                    tenant.EmployeeId, settings.ClientId, billableId,
+                    settings.Yes, settings.Json, settings.RejectIfRateExpired, cancellationToken);
+                if (sellPrice is null)
+                    return 1; // rejected, user cancelled, or non-interactive with no rate set
             }
 
             // Auto-resolve category when not explicitly specified
@@ -153,8 +163,8 @@ public class CreateCommand : AsyncCommand<CreateCommand.Settings>
                 Note = settings.Description,
                 LocationId = location,
                 CategoryId = categoryId,
-                BillableId = settings.Billable ?? "B",
-                SellPrice = rate?.Rate,
+                BillableId = billableId,
+                SellPrice = sellPrice,
             };
 
             // Show preview
@@ -169,8 +179,8 @@ public class CreateCommand : AsyncCommand<CreateCommand.Settings>
                 AnsiConsole.MarkupLine($"  Billable: {request.BillableId}");
                 if (categoryId is not null)
                     AnsiConsole.MarkupLine($"  Category: {Markup.Escape(categoryId)}{(settings.Category is null ? " [dim](auto-resolved)[/]" : "")}");
-                if (rate?.Rate is not null)
-                    AnsiConsole.MarkupLine($"  Rate:     ${rate.Rate:F2}");
+                if (sellPrice is not null)
+                    AnsiConsole.MarkupLine($"  Sell price: ${sellPrice:F2}");
                 if (!string.IsNullOrEmpty(settings.Description))
                     AnsiConsole.MarkupLine($"  Notes:    {Markup.Escape(settings.Description)}");
                 AnsiConsole.WriteLine();
@@ -227,6 +237,58 @@ public class CreateCommand : AsyncCommand<CreateCommand.Settings>
             }
             return 1;
         }
+    }
+
+    /// <summary>
+    /// No active rate exists for the client (expired or never set), which the API needs to derive a
+    /// sell price. Mirrors the Angular timesheet form: interactively offer to create a rate inline
+    /// (amount defaulting to the recommended one, or typed). Returns the resolved sell price, or null
+    /// to abort. When non-interactive (<paramref name="yes"/> / <paramref name="json"/>) or
+    /// <paramref name="rejectIfExpired"/> is set, it doesn't create anything — it returns a
+    /// machine-actionable recovery recipe and aborts.
+    /// </summary>
+    private async Task<decimal?> ResolveMissingRateAsync(
+        string empId, string clientId, string billableId, bool yes, bool json, bool rejectIfExpired, CancellationToken ct)
+    {
+        // Fail fast on an explicit reject — no recommendation lookup, no extra API call.
+        if (rejectIfExpired)
+        {
+            RateGuard.ReportNoActiveRate(clientId, new RateRecommendation(0m, 0m, RateSource.None), json);
+            return null;
+        }
+
+        var init = await _api.InitializeClientRateAsync(empId, clientId, ct);
+        var rec = init is not null ? RateResolver.Recommend(init) : new RateRecommendation(0m, 0m, RateSource.None);
+
+        // Non-interactive: can't prompt — report the recovery recipe (with recommended amounts) and abort.
+        if (yes || json)
+        {
+            RateGuard.ReportNoActiveRate(clientId, rec, json);
+            return null;
+        }
+
+        OutputHelper.WriteWarning($"No rate is set (or it has expired) for client '{clientId}'.");
+        if (!AnsiConsole.Confirm($"Create a rate for '{clientId}' now?"))
+            return null;
+
+        // Create a rate inline, defaulting to the recommended amount (previous, else employee
+        // default) — the same choices the Angular dialog offers. Expiry is left to the API default;
+        // use 'tp rate update' to change it.
+        var rate = AnsiConsole.Prompt(new TextPrompt<decimal>($"Regular rate (recommended ${rec.Rate:F2}):")
+            .DefaultValue(rec.Rate).ShowDefaultValue());
+        var prepaid = AnsiConsole.Prompt(new TextPrompt<decimal>($"Prepaid rate (recommended ${rec.PrepaidRate:F2}):")
+            .DefaultValue(rec.PrepaidRate).ShowDefaultValue());
+
+        await _api.SaveClientRateAsync(new SaveClientRateModel
+        {
+            EmpId = empId,
+            ClientId = clientId,
+            Rate = rate,
+            PrepaidRate = prepaid,
+            ExpiryDate = null
+        }, ct);
+        OutputHelper.WriteSuccess($"Rate created: ${rate:F2}.");
+        return RateResolver.SellPriceFor(billableId, rate, prepaid);
     }
 
     /// <summary>
