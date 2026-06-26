@@ -12,6 +12,7 @@ using Spectre.Console.Cli;
 
 using ClientSearch = SSW.TimePro.Cli.Features.Clients.SearchCommand;
 using ClientOutstanding = SSW.TimePro.Cli.Features.Clients.OutstandingCommand;
+using ClientBillableWork = SSW.TimePro.Cli.Features.Clients.BillableWorkCommand;
 using ProjectList = SSW.TimePro.Cli.Features.Projects.ListCommand;
 using ProjectRecent = SSW.TimePro.Cli.Features.Projects.RecentCommand;
 using RateGet = SSW.TimePro.Cli.Features.Rates.GetCommand;
@@ -172,6 +173,8 @@ app.Configure(config =>
             .WithDescription("Search for clients by name");
         branch.AddCommand<ClientOutstanding>("outstanding")
             .WithDescription("List clients with unbilled time");
+        branch.AddCommand<ClientBillableWork>("billable-work")
+            .WithDescription("Export clients over a billable work threshold");
     }
 
     config.AddBranch("client", cl =>

@@ -56,3 +56,6 @@ coverage/
 
 ## Generated agent skills
 .agents/
+
+## Generated reports
+Reports/
