@@ -507,7 +507,7 @@ public static class SkillBodyBuilder
         sb.AppendLine();
         sb.AppendLine("```bash");
         sb.AppendLine("tp client billable-work --from 2025-06-26 --to 2026-06-26 --threshold 50000 --json \\");
-        sb.AppendLine("  | jq 'map({clientId, clientName, firstInvoiceDate, billableTimesheetValueExGst})'");
+        sb.AppendLine("  | jq '.rows | map({clientId, clientName, firstInvoiceDate, billableTimesheetValueExGst})'");
         sb.AppendLine("```");
         sb.AppendLine();
         sb.AppendLine("This report uses invoice allocation data and returns clients whose billable");
