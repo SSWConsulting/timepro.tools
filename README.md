@@ -132,6 +132,8 @@ tp ts get 2026-03-12       # Specific date
 | `tp scrum` | Generate a daily scrum email from timesheets + GitHub (`--smart`, `--project`, `-i`, `--copy --format rich\|markdown\|plain`, `--json`, custom templates) |
 | `tp skills create TARGET [--global] [--accounting]` | Generate unified agent skill files (`--accounting` for the accountant CLI skill) |
 | `tp user me` | Show current user info |
+| `tp user list [QUERY]` | List users and match names/emails to EmpIDs (`--emp-id`, `--email`, `--all`, `--json`) |
+| `tp user get EMP_ID` | Show focused user details by EmpID (`--json`) |
 | `tp blog list` | Latest blog posts (`--mine`, `--limit N`, `--all`) |
 | `tp mcp` | Start MCP server (stdio); `--tenant NAME` binds the session to a specific tenant config without changing the global active tenant |
 | **Accountant (read-only)** | See [`docs/accounting.md`](docs/accounting.md) |
@@ -141,6 +143,7 @@ tp ts get 2026-03-12       # Specific date
 | `tp product list / get / discounts` | Sale products / SKUs |
 | `tp rate list --client ID` | Configured rates across all employees |
 | `tp client outstanding` | Clients with unbilled time |
+| `tp client billable-work` | Clients above a billable-work threshold, with first invoice date |
 | `tp unbilled list --client ID` | Unbilled timesheets for a client |
 | `tp recurring list / get` | Recurring invoice templates |
 | `tp prepaid summary / status INVOICE_ID` | Prepaid drawdown totals / PDF report |
@@ -561,7 +564,7 @@ TimePro.Tools/
 │   │   ├── Timesheets/              # get, create, update, delete, suggest, accept, export, check, copy
 │   │   ├── Bookings/                # list
 │   │   ├── Leave/                   # list, create, cancel
-│   │   ├── Clients/                 # search
+│   │   ├── Clients/                 # search, outstanding, billable-work
 │   │   ├── Projects/                # list
 │   │   ├── Iterations/              # list
 │   │   ├── Rates/                   # get
@@ -572,7 +575,7 @@ TimePro.Tools/
 │   │   ├── Scrum/                   # daily scrum generator (tp scrum)
 │   │   ├── Blogs/                   # latest employee blog posts
 │   │   ├── Skills/                  # create
-│   │   ├── Users/                   # me
+│   │   ├── Users/                   # me, list, get
 │   │   └── Mcp/                     # MCP server + tool groups
 │   └── Shared/Models/               # API DTOs
 ├── tests/

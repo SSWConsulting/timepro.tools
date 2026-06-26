@@ -80,4 +80,5 @@ The accounting skill keeps:
 
 - `allowed-tools: Bash(tp *)`
 - instruction-only read-only accounting workflows
+- client billable-work threshold report guidance, including the `.rows` JSON envelope shape
 - no prefetch/run-these-first commands

@@ -18,20 +18,12 @@ The report is a `tp` CLI command. It uses the active tenant config and does not 
 - TimePro CLI installed as `tp`.
 - A valid TimePro tenant login.
 
-## Install the CLI from this repository
+## Install or update the CLI
 
 ### macOS
 
 ```bash
-dotnet restore
-dotnet pack src/SSW.TimePro.Cli/ -c Release -o artifacts/nupkg
-dotnet tool install -g --add-source artifacts/nupkg SSW.TimePro.Cli
-```
-
-If the tool is already installed:
-
-```bash
-dotnet tool update -g --add-source artifacts/nupkg SSW.TimePro.Cli
+curl -fsSL https://raw.githubusercontent.com/SSWConsulting/TimePro.Tools/main/scripts/install.sh | bash
 ```
 
 Make sure the .NET tool directory is on your `PATH`:
@@ -46,15 +38,7 @@ tp --help
 From PowerShell:
 
 ```powershell
-dotnet restore
-dotnet pack src/SSW.TimePro.Cli/ -c Release -o artifacts/nupkg
-dotnet tool install -g --add-source artifacts/nupkg SSW.TimePro.Cli
-```
-
-If the tool is already installed:
-
-```powershell
-dotnet tool update -g --add-source artifacts/nupkg SSW.TimePro.Cli
+irm https://raw.githubusercontent.com/SSWConsulting/TimePro.Tools/main/scripts/install.ps1 | iex
 ```
 
 Make sure the .NET tool directory is on your `PATH`:
@@ -126,6 +110,14 @@ For AI/tooling, emit JSON to stdout instead of writing a CSV:
 
 ```bash
 tp client billable-work --from 2025-06-26 --to 2026-06-26 --threshold 50000 --json
+```
+
+JSON output is a report envelope, not a bare array. Client rows are under
+`.rows[]`:
+
+```bash
+tp client billable-work --from 2025-06-26 --to 2026-06-26 --threshold 50000 --json \
+  | jq '.rows | map({clientId, clientName, firstInvoiceDate, billableTimesheetValueExGst})'
 ```
 
 ## Troubleshooting

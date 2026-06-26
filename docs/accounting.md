@@ -1,9 +1,9 @@
 # Accountant commands (read-only)
 
 This doc covers `tp`'s invoice, receipt, credit-note, product, rate,
-outstanding, unbilled, recurring, and prepaid commands — everything an
-accountant needs to explore SSW TimePro data, reconcile totals, or
-cross-check against Xero.
+outstanding, billable-work threshold, unbilled, recurring, and prepaid
+commands — everything an accountant needs to explore SSW TimePro data,
+reconcile totals, or cross-check against Xero.
 
 All commands are **read-only**. Writes (creating invoices, receipts, credit
 notes, etc.) stay in the TimePro web app. For timesheeting commands (create /
@@ -80,6 +80,18 @@ tp unbilled list --client <CLIENT_ID>        # the timesheets themselves
 tp receipt outstanding <CLIENT_ID>           # outstanding invoices (aged)
 ```
 
+### Client billable-work threshold — `tp client billable-work`
+
+```bash
+tp client billable-work                      # last 12 months, $50k threshold, CSV under ./Reports
+tp client billable-work --from 2025-06-26 --to 2026-06-26 --threshold 50000 --json
+tp client billable-work --from 2025-06-26 --to 2026-06-26 --threshold 50000 --output ./Reports/client-billable-work.csv
+```
+
+JSON output is a report envelope with `startDate`, `endDate`,
+`thresholdExGst`, `clientCount`, `totals`, and `rows`. Client data is under
+`.rows[]`; use `.rows | map(...)` in `jq`, not a top-level array filter.
+
 ### Recurring invoice templates — `tp recurring`
 
 ```bash
@@ -151,7 +163,19 @@ tp client outstanding --json           # all clients with unbilled time
 tp unbilled list --client NWIND --json
 ```
 
-### 6. Credit-note audit
+### 6. Clients above a billable-work threshold
+
+```bash
+tp client billable-work --from 2025-06-26 --to 2026-06-26 --threshold 50000 --json \
+  | jq '.rows | map({clientId, clientName, firstInvoiceDate, billableTimesheetValueExGst})'
+```
+
+Use this when the question is "which clients had at least X billable work in
+the last 12 months?" The report calculates billable `B` and `BPP` timesheet
+value ex-GST, includes each client's first invoice date, and can write a CSV to
+`./Reports` for spreadsheet review.
+
+### 7. Credit-note audit
 
 ```bash
 tp creditnote list --client NWIND --json \
