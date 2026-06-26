@@ -3,7 +3,6 @@ using SSW.TimePro.Cli.Features.Auth;
 using SSW.TimePro.Cli.Features.Bookings;
 using SSW.TimePro.Cli.Features.Tenants;
 using SSW.TimePro.Cli.Features.Timesheets;
-using SSW.TimePro.Cli.Features.Users;
 using SSW.TimePro.Cli.Infrastructure;
 using SSW.TimePro.Cli.Infrastructure.ApiClient;
 using SSW.TimePro.Cli.Infrastructure.Config;
@@ -55,6 +54,9 @@ using ReportCmd = SSW.TimePro.Cli.Features.Report.ReportCommand;
 using QueryCmd = SSW.TimePro.Cli.Features.Query.QueryCommand;
 using McpHost = SSW.TimePro.Cli.Features.Mcp.McpHostCommand;
 using ScrumCmd = SSW.TimePro.Cli.Features.Scrum.ScrumCommand;
+using UserMe = SSW.TimePro.Cli.Features.Users.MeCommand;
+using UserList = SSW.TimePro.Cli.Features.Users.ListCommand;
+using UserGet = SSW.TimePro.Cli.Features.Users.GetCommand;
 
 // Configure DI
 var services = new ServiceCollection();
@@ -406,8 +408,12 @@ app.Configure(config =>
     config.AddBranch("user", user =>
     {
         user.SetDescription("User information");
-        user.AddCommand<MeCommand>("me")
+        user.AddCommand<UserMe>("me")
             .WithDescription("Show current user info");
+        user.AddCommand<UserList>("list")
+            .WithDescription("List users and match names or emails to EmpIDs");
+        user.AddCommand<UserGet>("get")
+            .WithDescription("Show user details by EmpID");
     });
 
     // Blog

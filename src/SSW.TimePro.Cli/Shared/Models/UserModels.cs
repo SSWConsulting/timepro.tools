@@ -37,3 +37,51 @@ public class EmployeeSettings
     public int TimeLessMinutes { get; set; }
     public string? TimezoneId { get; set; }
 }
+
+public class EmployeeDropdownItem
+{
+    public string? Text { get; set; }
+    public string? Value { get; set; }
+}
+
+public class EmployeeSummary
+{
+    public string? EmpId { get; set; }
+    public string? Name { get; set; }
+    public string? Email { get; set; }
+}
+
+public class EmployeeDetail
+{
+    public string? EmpId { get; set; }
+    public string? FirstName { get; set; }
+    public string? Surname { get; set; }
+    public string? MiddleName { get; set; }
+    public string? Position { get; set; }
+    public string? CategoryId { get; set; }
+    public string? Email { get; set; }
+    public DateTime? DateEnd { get; set; }
+    public DateTime? DateCreated { get; set; }
+    public DateTime? DateUpdated { get; set; }
+    public bool? IsEnabled { get; set; }
+    public string? TimezoneId { get; set; }
+    public bool? EnableGamification { get; set; }
+    public string? BlogRssFeedUrl { get; set; }
+    public string? TwitterHandle { get; set; }
+    public int? ViewPageId { get; set; }
+    public string? StartTime { get; set; }
+    public string? EndTime { get; set; }
+    public int? TimeLessMinutes { get; set; }
+    public string? LunchBreakStart { get; set; }
+    public string? LunchBreakEnd { get; set; }
+    public string? SiteId { get; set; }
+
+    public string? Name
+    {
+        get
+        {
+            var name = $"{FirstName} {Surname}".Trim();
+            return string.IsNullOrWhiteSpace(name) ? null : name;
+        }
+    }
+}

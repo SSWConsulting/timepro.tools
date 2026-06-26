@@ -22,6 +22,8 @@ public interface ITimeProApiClient
     Task<EmployeeIdResponse?> GetEmployeeIdAsync(CancellationToken ct = default);
     Task<CurrentUserResponse?> GetCurrentUserAsync(CancellationToken ct = default);
     Task<EmployeeSettings?> GetEmployeeSettingsAsync(CancellationToken ct = default);
+    Task<List<EmployeeSummary>> ListUsersAsync(bool includeFormerEmployees = false, CancellationToken ct = default);
+    Task<EmployeeDetail?> GetUserAsync(string empId, CancellationToken ct = default);
     Task<List<ClientSearchResult>> SearchClientsAsync(string employeeId, string searchText, CancellationToken ct = default);
     Task<List<ProjectForSelect>> GetProjectsForClientAsync(string employeeId, string clientId, CancellationToken ct = default);
     Task<ClientRateResponse?> GetClientRateAsync(string employeeId, string clientId, DateOnly date, CancellationToken ct = default);
@@ -173,6 +175,62 @@ public class TimeProApiClient : ITimeProApiClient
     public async Task<EmployeeSettings?> GetEmployeeSettingsAsync(CancellationToken ct = default)
     {
         return await GetAsync<EmployeeSettings>("/api/employees/getSettingsDetails", ct);
+    }
+
+    public async Task<List<EmployeeSummary>> ListUsersAsync(
+        bool includeFormerEmployees = false, CancellationToken ct = default)
+    {
+        var dropdownUrl = $"/api/Employees/DropDown?includeExEmployees={includeFormerEmployees.ToString().ToLowerInvariant()}";
+        var dropdown = await GetAsync<List<EmployeeDropdownItem>>(dropdownUrl, ct) ?? [];
+
+        var empIds = dropdown
+            .Select(e => e.Value)
+            .Where(e => !string.IsNullOrWhiteSpace(e))
+            .Select(e => e!)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (empIds.Count == 0)
+            return [];
+
+        var users = await PostAsync<List<EmployeeSummary>>("/api/Employees/GetByIds", empIds, ct) ?? [];
+        var order = empIds
+            .Select((empId, index) => new { empId, index })
+            .ToDictionary(x => x.empId, x => x.index, StringComparer.OrdinalIgnoreCase);
+
+        return users
+            .Where(u => !string.IsNullOrWhiteSpace(u.EmpId))
+            .OrderBy(u => order.TryGetValue(u.EmpId!, out var index) ? index : int.MaxValue)
+            .ThenBy(u => u.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    public async Task<EmployeeDetail?> GetUserAsync(string empId, CancellationToken ct = default)
+    {
+        var user = await GetAsync<EmployeeDetail>($"/api/employees/{Uri.EscapeDataString(empId)}", ct);
+        if (user is null)
+            return null;
+
+        if (string.IsNullOrWhiteSpace(user.EmpId))
+            user.EmpId = empId;
+
+        if (string.IsNullOrWhiteSpace(user.Email))
+        {
+            var summaries = await PostAsync<List<EmployeeSummary>>("/api/Employees/GetByIds", new[] { empId }, ct) ?? [];
+            var summary = summaries.FirstOrDefault();
+            if (summary is not null)
+            {
+                user.Email = FirstNonEmpty(user.Email, summary.Email);
+                user.EmpId = FirstNonEmpty(user.EmpId, summary.EmpId);
+            }
+        }
+
+        return user;
+    }
+
+    private static string? FirstNonEmpty(params string?[] values)
+    {
+        return values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
     }
 
     // ───────────────────────── Clients / Projects ─────────────────────────
