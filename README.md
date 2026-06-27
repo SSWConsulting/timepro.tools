@@ -328,8 +328,9 @@ When creating timesheets, location is auto-applied based on the day of week.
 Generate agent skill files for a project:
 
 ```bash
-tp skills create .agents                         # Generate unified skills for this project
-tp skills create .claude --global                # Generate unified skills under global config
+tp skills create .agents                         # Generate skills under ./.agents/skills
+tp skills create .claude --global                # Generate skills under ~/.claude/skills (agent global dir)
+tp skills create .codex  --global                # Generate skills under ~/.codex/skills
 
 tp feature accounting enable                     # Include accounting skills + accounting MCP tools
 tp feature developer enable                      # Include developer diagnostics/compare/bug skills

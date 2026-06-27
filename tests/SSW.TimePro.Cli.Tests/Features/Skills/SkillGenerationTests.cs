@@ -9,6 +9,24 @@ public class SkillGenerationTests
 {
     private static GlobalConfig Global() => new() { DefaultLocation = "Office" };
 
+    [Fact]
+    public void ResolveBaseDir_Global_WritesUnderHomeTargetDir()
+    {
+        var result = CreateCommand.ResolveBaseDir(
+            global: true, target: ".claude", currentDirectory: "/work/repo", homeDirectory: "/home/jk");
+
+        result.Should().Be(Path.Combine("/home/jk", ".claude"));
+    }
+
+    [Fact]
+    public void ResolveBaseDir_Local_WritesUnderCurrentDirectory()
+    {
+        var result = CreateCommand.ResolveBaseDir(
+            global: false, target: ".agents", currentDirectory: "/work/repo", homeDirectory: "/home/jk");
+
+        result.Should().Be(Path.Combine("/work/repo", ".agents"));
+    }
+
     private static string RepoRoot()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);

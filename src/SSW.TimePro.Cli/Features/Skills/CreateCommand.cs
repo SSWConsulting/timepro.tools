@@ -30,9 +30,11 @@ public class CreateCommand : Command<CreateCommand.Settings>
         var mappings = _config.LoadRepoMappings();
 
         // --global only swaps the base dir; the skill layout is always skills/<name>/SKILL.md.
-        var baseDir = settings.Global
-            ? ConfigPaths.Root
-            : Path.Combine(Environment.CurrentDirectory, settings.Target);
+        var baseDir = ResolveBaseDir(
+            settings.Global,
+            settings.Target,
+            Environment.CurrentDirectory,
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
 
         // Detect repo mapping for current directory (with worktree support)
         var repoMapping = RepoDetector.Detect(Environment.CurrentDirectory, mappings);
@@ -82,6 +84,16 @@ public class CreateCommand : Command<CreateCommand.Settings>
 
         return 0;
     }
+
+    /// <summary>
+    /// Resolves where skills are written. With <paramref name="global"/>, skills go to the
+    /// home-level agent directory for the target (e.g. <c>~/.claude</c>, <c>~/.codex</c>) so the
+    /// agent actually discovers them; otherwise they go under the current directory.
+    /// </summary>
+    internal static string ResolveBaseDir(bool global, string target, string currentDirectory, string homeDirectory) =>
+        global
+            ? Path.Combine(homeDirectory, target)
+            : Path.Combine(currentDirectory, target);
 
     private static string WriteSkill(string baseDir, SkillContentModel model)
     {

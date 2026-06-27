@@ -9,7 +9,13 @@ tp skills create <TARGET> [--global]
 ```
 
 - `<TARGET>` is the agent root, for example `.agents` or `.claude`.
-- `--global` swaps the base directory to the CLI global config root.
+- Skills are written to `<TARGET>/skills/<name>/SKILL.md` **relative to the current
+  directory** by default.
+- `--global` writes the same `<TARGET>/skills/...` layout under the user's **home**
+  directory instead (e.g. `~/.claude`, `~/.codex`, `~/.agents`), so global skills land
+  where the agent actually discovers them. Pick `<TARGET>` to match the agent's home dir:
+  `tp skills create .claude --global` → `~/.claude/skills/`,
+  `tp skills create .codex --global` → `~/.codex/skills/`.
 
 The default output writes:
 
