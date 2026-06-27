@@ -91,11 +91,13 @@ Every release must have a matching Markdown file:
 
 ```text
 release-notes/<version>.md
+release-notes/latest.md -> <version>.md
 ```
 
 For example, release `0.2.7` must have `release-notes/0.2.7.md`. The release
-workflow uses that file as the GitHub Release body, and the CLI embeds the same
-file for `tp --whats-new`.
+workflow requires `release-notes/latest.md` to be a symlink to `0.2.7.md`, uses
+that symlink as the GitHub Release body, and embeds the versioned file for
+`tp --whats-new`.
 
 ## Release via GitHub Actions
 
@@ -113,10 +115,14 @@ GitHub Release for the `tp` global tool. It is **manually triggered**
      **without** creating a GitHub Release. Set to `false` to also cut the release
      (tag `v<version>` plus the attached `.nupkg`).
 
-Before running a non-dry-run release, create the next release note file. The next
-version is computed from the current `<VersionPrefix>` and the latest GitHub
-Release for that prefix. For the first `0.2` release, that means
-`release-notes/0.2.1.md`.
+Before running a non-dry-run release, create the next release note file and
+repoint `release-notes/latest.md` to it. The next version is computed from the
+current `<VersionPrefix>` and the latest GitHub Release for that prefix. For the
+first `0.2` release, that means:
+
+```bash
+ln -sfn 0.2.1.md release-notes/latest.md
+```
 
 The workflow always runs the test suite and `scripts/security/nuget-audit.sh`
 before packing.

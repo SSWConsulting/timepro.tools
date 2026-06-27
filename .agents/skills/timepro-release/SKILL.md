@@ -19,7 +19,13 @@ gh release list --limit 100 --json tagName --jq '.[].tagName'
 
 3. Pick the next patch by adding one to the highest tag matching `v<VersionPrefix>.<patch>`.
 4. Create `release-notes/<version>.md` before dispatching the release workflow.
-5. Keep the filename exact and simple, for example `release-notes/0.2.7.md`.
+5. Repoint `release-notes/latest.md` to that versioned file:
+
+```bash
+ln -sfn <version>.md release-notes/latest.md
+```
+
+6. Keep the filename exact and simple, for example `release-notes/0.2.7.md`.
 
 Patch-zero versions such as `0.2.0` are developer builds. Do not create a release
 note for patch zero.
@@ -39,8 +45,9 @@ Dispatch `.github/workflows/release.yml` with `dry_run=false`. The workflow will
 
 - compute the same next version from GitHub Releases,
 - fail if `release-notes/<version>.md` is missing,
+- fail if `release-notes/latest.md` is not a symlink to `<version>.md`,
 - pack the tool with the release notes embedded,
-- create the GitHub Release using that Markdown file as the release body.
+- create the GitHub Release using `release-notes/latest.md` as the release body.
 
 After the release, install and smoke test the released package:
 

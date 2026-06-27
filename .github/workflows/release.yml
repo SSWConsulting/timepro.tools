@@ -10,8 +10,9 @@ name: Release (NuGet)
 # A dry run (default) builds, tests, audits, and packs, uploading the .nupkg as a
 # build artifact. Set dry_run=false to also create a GitHub Release.
 #
-# Every release must have release-notes/<version>.md. That file is used as the
-# GitHub Release body and is embedded in the packaged CLI for `tp --whats-new`.
+# Every release must have release-notes/<version>.md, and release-notes/latest.md
+# must point to it. latest.md is used as the GitHub Release body; versioned files
+# are embedded in the packaged CLI for `tp --whats-new`.
 #
 # NOTE: Publishing to nuget.org is intentionally DISABLED for now. The push step
 # below is commented out; re-enable it (and add the NUGET_API_KEY secret) when the
@@ -75,16 +76,28 @@ jobs:
           fi
 
           version="${base}.$((latest_patch + 1))"
-          notes_file="release-notes/${version}.md"
+          version_notes_file="release-notes/${version}.md"
+          latest_notes_file="release-notes/latest.md"
 
-          if [[ ! -f "$notes_file" ]]; then
-            echo "::error::Missing $notes_file. Create the release note before running a release." >&2
+          if [[ ! -f "$version_notes_file" ]]; then
+            echo "::error::Missing $version_notes_file. Create the release note before running a release." >&2
+            exit 1
+          fi
+
+          if [[ ! -L "$latest_notes_file" ]]; then
+            echo "::error::$latest_notes_file must be a symlink to ${version}.md." >&2
+            exit 1
+          fi
+
+          latest_target="$(readlink "$latest_notes_file")"
+          if [[ "$latest_target" != "${version}.md" ]]; then
+            echo "::error::$latest_notes_file points to '$latest_target', expected '${version}.md'." >&2
             exit 1
           fi
 
           echo "value=$version" >> "$GITHUB_OUTPUT"
-          echo "notes_file=$notes_file" >> "$GITHUB_OUTPUT"
-          echo "Resolved version: $version (tag v$version, notes $notes_file)"
+          echo "notes_file=$latest_notes_file" >> "$GITHUB_OUTPUT"
+          echo "Resolved version: $version (tag v$version, notes $latest_notes_file -> $latest_target)"
 
       - name: Build
         run: |
