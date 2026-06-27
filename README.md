@@ -58,6 +58,7 @@ tp info
 
 Use `tp info --no-update-check` when you need a local-only check, or
 `tp info --detailed` for install history and config diagnostics.
+For scripts that need only the version string, `tp --version` prints just that.
 
 Check whether a newer GitHub Release is available:
 

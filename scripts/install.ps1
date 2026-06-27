@@ -78,9 +78,9 @@ $toolPathCandidates = @(
 )
 $toolPath = $toolPathCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
 if ($toolPath) {
-    & $toolPath --version *> $null
+    & $toolPath info --no-update-check *> $null
 } elseif (Get-Command $ToolName -ErrorAction SilentlyContinue) {
-    & $ToolName --version *> $null
+    & $ToolName info --no-update-check *> $null
 }
 
 $onPath = ($env:PATH -split [System.IO.Path]::PathSeparator) -contains $toolsDir

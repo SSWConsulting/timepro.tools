@@ -69,12 +69,13 @@ if (tenantOverride.Error is not null)
     return 1;
 }
 
-VersionStateService.RecordInstalledVersion(configService, BuildInfo.Version, DateTimeOffset.UtcNow);
+var isHelpOrVersionRequest = tenantOverride.Args.Any(arg => arg is "--help" or "-h" or "--version");
+if (!isHelpOrVersionRequest)
+    VersionStateService.RecordInstalledVersion(configService, BuildInfo.Version, DateTimeOffset.UtcNow);
 
 if (AppMetadataCommandLine.IsMetadataRequest(tenantOverride.Args))
     return await AppMetadataCommandLine.ExecuteAsync(tenantOverride.Args, configService, CancellationToken.None);
 
-var isHelpOrVersionRequest = tenantOverride.Args.Any(arg => arg is "--help" or "-h" or "--version");
 TenantConfig? overrideTenant = null;
 string? tenantOverrideError = null;
 if (!isHelpOrVersionRequest)
