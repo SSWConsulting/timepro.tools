@@ -60,6 +60,8 @@ coverage/
 .agents/skills/*
 !.agents/skills/timepro-release/
 !.agents/skills/timepro-release/SKILL.md
+!.agents/skills/timepro-guide-curator/
+!.agents/skills/timepro-guide-curator/SKILL.md
 src/**/.agents/
 
 ## Generated reports

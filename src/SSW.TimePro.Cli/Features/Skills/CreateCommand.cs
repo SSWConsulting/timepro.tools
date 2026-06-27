@@ -66,9 +66,6 @@ public class CreateCommand : Command<CreateCommand.Settings>
         if (accountingEnabled)
         {
             WriteAndTrack(SkillModelBuilder.BuildAccounting(tenant));
-            WriteAndTrack(SkillModelBuilder.BuildAccountingTaxMismatch());
-            WriteAndTrack(SkillModelBuilder.BuildAccountingInvoiceDiagnostics());
-            WriteAndTrack(SkillModelBuilder.BuildAccountingClientDiagnostics());
             global.TouchFeatureVersion(FeatureCatalog.Accounting);
         }
 

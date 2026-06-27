@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using SSW.TimePro.Cli.Infrastructure.Guides;
 using SSW.TimePro.Cli.Infrastructure.Output;
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -30,6 +31,18 @@ public class GuideCommand : Command<GuideCommand.Settings>
                 AnsiConsole.MarkupLine($"- {Markup.Escape(question)}");
 
             AnsiConsole.WriteLine();
+            AnsiConsole.MarkupLine("[bold]Matching guides[/]");
+            if (g.MatchingGuides.Count == 0)
+            {
+                AnsiConsole.MarkupLine("[grey]- No matching guide topics found yet[/]");
+            }
+            else
+            {
+                foreach (var guide in g.MatchingGuides)
+                    AnsiConsole.MarkupLine($"- [cyan]{Markup.Escape(guide.Title)}[/] ({Markup.Escape(guide.MatchType)}): {Markup.Escape(guide.Description)}");
+            }
+
+            AnsiConsole.WriteLine();
             AnsiConsole.MarkupLine("[bold]Useful CLI commands[/]");
             foreach (var command in g.RecommendedCommands)
                 AnsiConsole.MarkupLine($"- [cyan]{Markup.Escape(command)}[/]");
@@ -57,11 +70,38 @@ public sealed record DeveloperGuide(
     IReadOnlyList<string> AskUser,
     IReadOnlyList<string> RecommendedCommands,
     IReadOnlyList<string> RecommendedSkills,
+    IReadOnlyList<RankedGuide> MatchingGuides,
     IReadOnlyList<string> TelemetryFollowUp,
     string Note)
 {
-    public static DeveloperGuide For(string? useCase = null) =>
-        new(
+    private const string Domain = "dev";
+
+    private static readonly IReadOnlyList<string> CommonCommands =
+    [
+        "tp tenant info --tenant <name> --env <env> --json",
+        "tp user get <empId> --tenant <name> --env <env> --json",
+        "tp ts get <date> --tenant <name> --env <env> --emp-id <empId> --json",
+        "tp ts suggest <date> --tenant <name> --env <env> --json",
+        "tp bk list --date <date> --tenant <name> --env <env> --json",
+        "tp invoice get <invoiceId> --tenant <name> --env <env> --json",
+        "tp invoice timesheets <invoiceId> --tenant <name> --env <env> --json",
+        "tp rate list --client <clientId> --tenant <name> --env <env> --show-expired --json"
+    ];
+
+    private static readonly IReadOnlyList<string> CommonSkills =
+    [
+        "timepro-dev-diagnostics",
+        "timepro-dev-timesheet-diagnostics",
+        "timepro-dev-finance-diagnostics",
+        "timepro-env-compare"
+    ];
+
+    public static DeveloperGuide For(string? useCase = null)
+    {
+        var matchingGuides = GuideRanking.Rank(useCase, GuideCatalog.Load(Domain));
+        var hasFilteredMatches = !string.IsNullOrWhiteSpace(useCase) && matchingGuides.Count > 0;
+
+        return new(
             UseCase: useCase,
             AskUser:
             [
@@ -71,32 +111,28 @@ public sealed record DeveloperGuide(
                 "Is this local/staging, or production read-only diagnostics?",
                 "What successful behavior should be observed after a fix?"
             ],
-            RecommendedCommands:
-            [
-                "tp tenant info --tenant <name> --env <env> --json",
-                "tp user get <empId> --tenant <name> --env <env> --json",
-                "tp ts get <date> --tenant <name> --env <env> --emp-id <empId> --json",
-                "tp ts suggest <date> --tenant <name> --env <env> --json",
-                "tp bk list --date <date> --tenant <name> --env <env> --json",
-                "tp invoice get <invoiceId> --tenant <name> --env <env> --json",
-                "tp invoice timesheets <invoiceId> --tenant <name> --env <env> --json",
-                "tp rate list --client <clientId> --tenant <name> --env <env> --show-expired --json"
-            ],
-            RecommendedSkills:
-            [
-                "timepro-dev-diagnostics",
-                "timepro-dev-timesheet-diagnostics",
-                "timepro-dev-finance-diagnostics",
-                "timepro-env-compare",
-                "timepro-accounting-tax-mismatch",
-                "timepro-accounting-invoice-diagnostics",
-                "timepro-accounting-client-diagnostics"
-            ],
+            RecommendedCommands: hasFilteredMatches
+                ? Unique(matchingGuides.SelectMany(guide => guide.Commands))
+                : CommonCommands,
+            RecommendedSkills: hasFilteredMatches
+                ? SpecificOrFallback(matchingGuides.SelectMany(guide => guide.Skills), CommonSkills)
+                : CommonSkills,
+            MatchingGuides: matchingGuides,
             TelemetryFollowUp:
             [
                 "Use App Insights only after CLI evidence identifies the relevant EmpID/date/client/invoice/reference.",
                 "Start with requests/exceptions/traces filtered by the concrete ID and recent time window.",
                 "Ask before any non-read-only production action, including resyncs, writes, or repair jobs."
             ],
-            Note: "The guide is intentionally lightweight. Keep repro and fix verification in specialized skills and primitive CLI evidence so guide updates do not require code-heavy diagnostics.");
+            Note: "The guide is intentionally lightweight. Specific recipes live in guides/dev so local guide updates do not require app code changes.");
+    }
+
+    private static IReadOnlyList<string> Unique(IEnumerable<string> values) =>
+        values.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+
+    private static IReadOnlyList<string> SpecificOrFallback(IEnumerable<string> values, IReadOnlyList<string> fallback)
+    {
+        var specific = Unique(values);
+        return specific.Count == 0 ? fallback : specific;
+    }
 }

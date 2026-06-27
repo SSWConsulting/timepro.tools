@@ -116,7 +116,7 @@ The accounting skill keeps:
 - instruction-only read-only accounting workflows
 - client billable-work threshold report guidance, including the `.rows` JSON envelope shape
 - deeper reconciliation diagnostics for Excel, CSV, Xero MCP, bank-feed MCP, or another external source
-- guidance to check `tp accounting guide` first, then use specialized markdown skills such as `timepro-accounting-tax-mismatch`, `timepro-accounting-invoice-diagnostics`, and `timepro-accounting-client-diagnostics`
+- guidance to check `tp accounting guide` first, then use specific recipes under `guides/accounting/`
 - no prefetch/run-these-first commands
 
 The developer diagnostics skill keeps:
@@ -139,7 +139,13 @@ The developer finance diagnostics skill keeps:
 - `allowed-tools: Bash(tp *), Bash(az monitor app-insights query *), Bash(jq *)`
 - bug-focused workflows for invoices, credit notes, receipts, client rates, prepaid drawdown, tax, billing status, and external sync
 - guidance that accounting-like scenarios are used to find code/data/API/sync boundaries, not to produce final reconciliation conclusions
-- pointers to `tp accounting ...` CLI diagnostics for deeper invoice, client, and tax mismatch evidence
+- pointers to `tp accounting guide` and guide-backed accounting skills for deeper invoice, client, and tax mismatch evidence
+
+## Diagnostic guide curation
+
+Guide-backed diagnostics are intentionally easy to extend. See
+[`diagnostic-guides.md`](diagnostic-guides.md) for the accounting and developer
+guide topic workflow, simple `--use-case` ranking rules, and test expectations.
 
 The environment comparison skill keeps:
 

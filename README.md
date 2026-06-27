@@ -18,7 +18,7 @@ SSW TimePro is a time tracking and invoicing system. This CLI makes it fast to v
 - **Location Defaults** — Set WFH days so location is auto-applied when creating timesheets
 - **CSV Export** — Export timesheets for tax reports or analysis
 - **Skills Generation** — Generate agent skill files with project context and `gh` commands
-- **MCP Server** — Exposes timesheet, lookup, and leave tools by default, with optional accounting/prepaid diagnostics via feature packs
+- **MCP Server** — Exposes timesheet, lookup, and leave tools by default, with optional accounting/prepaid tools via feature packs
 
 ## Prerequisites
 
@@ -328,7 +328,7 @@ Generate agent skill files for a project:
 tp skills create .agents                         # Generate unified skills for this project
 tp skills create .claude --global                # Generate unified skills under global config
 
-tp feature accounting enable                     # Include accounting skills + accounting MCP diagnostics
+tp feature accounting enable                     # Include accounting skills + accounting MCP tools
 tp feature developer enable                      # Include developer diagnostics/compare/bug skills
 ```
 
@@ -356,6 +356,11 @@ Optional generated skills:
 - Environment comparison (`timepro-env-compare`) when `tp feature developer enable` is set
 
 Legacy shorthand flags `--accounting`, `--developer`, and `--dev` are intercepted before command parsing, enable the matching feature, and are then stripped from the command.
+
+New guide-backed diagnostics are welcomed. See
+[`docs/diagnostic-guides.md`](docs/diagnostic-guides.md) for how to add
+accounting or developer guide indexes, Markdown recipes, ranking
+keywords, and tests.
 
 ### Summary & Report
 

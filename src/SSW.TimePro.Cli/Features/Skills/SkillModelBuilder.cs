@@ -11,9 +11,6 @@ public static class SkillModelBuilder
 {
     public const string TimesheetsName = "timepro-timesheets";
     public const string AccountingName = "timepro-accounting-cli";
-    public const string AccountingTaxMismatchName = "timepro-accounting-tax-mismatch";
-    public const string AccountingInvoiceDiagnosticsName = "timepro-accounting-invoice-diagnostics";
-    public const string AccountingClientDiagnosticsName = "timepro-accounting-client-diagnostics";
     public const string TenantSetupName = "timepro-tenant-setup";
     public const string DeveloperDiagnosticsName = "timepro-dev-diagnostics";
     public const string DeveloperTimesheetDiagnosticsName = "timepro-dev-timesheet-diagnostics";
@@ -26,15 +23,6 @@ public static class SkillModelBuilder
 
     private const string AccountingDescription =
         "Explore SSW TimePro financial data via the tp CLI (read-only) — invoices with line items, billed timesheets, credit notes, receipts, sale products, client rates, aged debtors, unbilled time, recurring invoices, prepaid drawdowns and client billable-work threshold reports. Use for accountant-style questions. For raw HTTP/curl access (when tp isn't installed), use the timepro-accounting skill instead.";
-
-    private const string AccountingTaxMismatchDescription =
-        "Guide for finding non-zero TimePro timesheets with 0% tax on non-zero-tax invoices using read-only tp CLI evidence, jq/Python shaping, and CSV output.";
-
-    private const string AccountingInvoiceDiagnosticsDescription =
-        "Guide for assembling a read-only TimePro invoice evidence pack from invoice header, product lines, allocated/write-off timesheets, receipts, and credit notes.";
-
-    private const string AccountingClientDiagnosticsDescription =
-        "Guide for diagnosing a TimePro client's accounting position using invoices, unpaid invoices, aged debtors, unbilled time, credit notes, rates, and external comparison evidence.";
 
     private const string TenantSetupDescription =
         "Set up and switch TimePro tenant profiles with the tp CLI, including switching the active session to ssw-staging and using process-local --tenant/--env overrides without changing the active tenant.";
@@ -56,9 +44,6 @@ public static class SkillModelBuilder
         new(TimesheetsName, CurrentSkillVersion, null),
         new(TenantSetupName, CurrentSkillVersion, null),
         new(AccountingName, CurrentSkillVersion, FeatureCatalog.Accounting),
-        new(AccountingTaxMismatchName, CurrentSkillVersion, FeatureCatalog.Accounting),
-        new(AccountingInvoiceDiagnosticsName, CurrentSkillVersion, FeatureCatalog.Accounting),
-        new(AccountingClientDiagnosticsName, CurrentSkillVersion, FeatureCatalog.Accounting),
         new(DeveloperDiagnosticsName, CurrentSkillVersion, FeatureCatalog.Developer),
         new(DeveloperTimesheetDiagnosticsName, CurrentSkillVersion, FeatureCatalog.Developer),
         new(DeveloperFinanceDiagnosticsName, CurrentSkillVersion, FeatureCatalog.Developer),
@@ -102,33 +87,6 @@ public static class SkillModelBuilder
             AllowedTools: ["Bash(tp *)"],
             Prefetch: [],
             Body: SkillBodyBuilder.BuildAccountingBody(tenant));
-
-    public static SkillContentModel BuildAccountingTaxMismatch() =>
-        new(
-            Name: AccountingTaxMismatchName,
-            Version: CurrentSkillVersion,
-            Description: AccountingTaxMismatchDescription,
-            AllowedTools: ["Bash(tp *)", "Bash(jq *)", "Bash(python3 *)"],
-            Prefetch: [],
-            Body: SkillBodyBuilder.BuildAccountingTaxMismatchBody());
-
-    public static SkillContentModel BuildAccountingInvoiceDiagnostics() =>
-        new(
-            Name: AccountingInvoiceDiagnosticsName,
-            Version: CurrentSkillVersion,
-            Description: AccountingInvoiceDiagnosticsDescription,
-            AllowedTools: ["Bash(tp *)", "Bash(jq *)", "Bash(python3 *)"],
-            Prefetch: [],
-            Body: SkillBodyBuilder.BuildAccountingInvoiceDiagnosticsBody());
-
-    public static SkillContentModel BuildAccountingClientDiagnostics() =>
-        new(
-            Name: AccountingClientDiagnosticsName,
-            Version: CurrentSkillVersion,
-            Description: AccountingClientDiagnosticsDescription,
-            AllowedTools: ["Bash(tp *)", "Bash(jq *)", "Bash(python3 *)"],
-            Prefetch: [],
-            Body: SkillBodyBuilder.BuildAccountingClientDiagnosticsBody());
 
     public static SkillContentModel BuildTenantSetup() =>
         new(

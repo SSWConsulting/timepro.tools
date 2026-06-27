@@ -72,59 +72,14 @@ public class SkillGenerationTests
         output.Should().Contain("tp accounting guide --use-case \"0% tax timesheets on taxable invoice\" --json");
         output.Should().Contain("Tax rates may arrive as `0.1` or `10` for 10%");
         output.Should().Contain("Excel, CSV, Xero MCP, bank-feed MCP, or another system");
-        output.Should().Contain("timepro-accounting-tax-mismatch");
-        output.Should().Contain("timepro-accounting-invoice-diagnostics");
-        output.Should().Contain("timepro-accounting-client-diagnostics");
+        output.Should().Contain("guides/accounting/tax-mismatch.md");
+        output.Should().Contain("guides/accounting/invoice-evidence-pack.md");
+        output.Should().Contain("guides/accounting/client-accounting-position.md");
         output.Should().Contain("MCP exposes primitive read-only tools");
         output.Should().Contain("With another MCP such as Xero");
         output.Should().Contain("tp feature accounting enable");
         output.Should().NotContain("## Run these first");
         output.Should().NotContain("!`");
-    }
-
-    [Fact]
-    public void AccountingTaxMismatch_ProducesSpecialisedGuideSkill()
-    {
-        var model = SkillModelBuilder.BuildAccountingTaxMismatch();
-        var output = SkillRenderer.Render(model);
-
-        SkillRenderer.RelativePath(model.Name)
-            .Should().Be("skills/timepro-accounting-tax-mismatch/SKILL.md");
-        model.Version.Should().Be(SkillModelBuilder.CurrentSkillVersion);
-        output.Should().Contain("name: timepro-accounting-tax-mismatch");
-        output.Should().Contain("tp accounting guide --use-case \"0% tax timesheets on taxable invoice\" --json");
-        output.Should().Contain("tp invoice timesheets \"$INV\" --json > /tmp/tp-invoice-timesheets.json");
-        output.Should().Contain("/tmp/timepro-tax-mismatch.csv");
-    }
-
-    [Fact]
-    public void AccountingInvoiceDiagnostics_ProducesSpecialisedGuideSkill()
-    {
-        var model = SkillModelBuilder.BuildAccountingInvoiceDiagnostics();
-        var output = SkillRenderer.Render(model);
-
-        SkillRenderer.RelativePath(model.Name)
-            .Should().Be("skills/timepro-accounting-invoice-diagnostics/SKILL.md");
-        model.Version.Should().Be(SkillModelBuilder.CurrentSkillVersion);
-        output.Should().Contain("name: timepro-accounting-invoice-diagnostics");
-        output.Should().Contain("tp accounting guide --use-case \"invoice reconciliation evidence pack\" --json");
-        output.Should().Contain("tp invoice receipts \"$INV\" --json > /tmp/tp-invoice-receipts.json");
-        output.Should().Contain("Credit notes are netted only when the user asks for net sales");
-    }
-
-    [Fact]
-    public void AccountingClientDiagnostics_ProducesSpecialisedGuideSkill()
-    {
-        var model = SkillModelBuilder.BuildAccountingClientDiagnostics();
-        var output = SkillRenderer.Render(model);
-
-        SkillRenderer.RelativePath(model.Name)
-            .Should().Be("skills/timepro-accounting-client-diagnostics/SKILL.md");
-        model.Version.Should().Be(SkillModelBuilder.CurrentSkillVersion);
-        output.Should().Contain("name: timepro-accounting-client-diagnostics");
-        output.Should().Contain("tp accounting guide --use-case \"client accounting position\" --json");
-        output.Should().Contain("tp client billable-work --from \"$FROM\" --to \"$TO\" --threshold 0 --json");
-        output.Should().Contain("Excel, CSV, Xero MCP, or another source");
     }
 
     [Fact]
@@ -207,7 +162,7 @@ public class SkillGenerationTests
         output.Should().Contain("tp rate list --client NWIND --tenant northwind --env staging --emp-id ALEX --show-expired --json");
         output.Should().Contain("tp dev guide --use-case \"0% tax timesheets on taxable invoice\" --json");
         output.Should().Contain("tp accounting guide --use-case \"0% tax timesheets on taxable invoice\" --json");
-        output.Should().Contain("timepro-accounting-tax-mismatch");
+        output.Should().Contain("guides/accounting/tax-mismatch.md");
         output.Should().Contain("External sync status/reference");
         output.Should().Contain("Xero MCP");
     }
@@ -239,9 +194,6 @@ public class SkillGenerationTests
             SkillRenderer.Render(Timesheets()),
             SkillRenderer.Render(SkillModelBuilder.BuildTenantSetup()),
             SkillRenderer.Render(SkillModelBuilder.BuildAccounting(tenant: null)),
-            SkillRenderer.Render(SkillModelBuilder.BuildAccountingTaxMismatch()),
-            SkillRenderer.Render(SkillModelBuilder.BuildAccountingInvoiceDiagnostics()),
-            SkillRenderer.Render(SkillModelBuilder.BuildAccountingClientDiagnostics()),
             SkillRenderer.Render(SkillModelBuilder.BuildDeveloperDiagnostics()),
             SkillRenderer.Render(SkillModelBuilder.BuildDeveloperTimesheetDiagnostics()),
             SkillRenderer.Render(SkillModelBuilder.BuildDeveloperFinanceDiagnostics()),

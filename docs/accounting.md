@@ -206,8 +206,8 @@ Use this when checking for timesheet tax drift after invoice allocation.
 tp accounting guide --use-case "0% tax timesheets on taxable invoice" --json
 ```
 
-If the guide matches the investigation, use the generated
-`timepro-accounting-tax-mismatch` skill. It composes read-only invoice and
+If the guide matches the investigation, use
+`guides/accounting/tax-mismatch.md`. It composes read-only invoice and
 allocated-timesheet commands into a CSV report without requiring a dedicated
 diagnostic command.
 
@@ -272,9 +272,9 @@ MCP tools should mirror CLI behavior. If a report contains business logic,
 prefer a CLI command or guide-backed skill first:
 
 - `tp accounting guide --json`
-- `timepro-accounting-tax-mismatch`
-- `timepro-accounting-invoice-diagnostics`
-- `timepro-accounting-client-diagnostics`
+- `guides/accounting/tax-mismatch.md`
+- `guides/accounting/invoice-evidence-pack.md`
+- `guides/accounting/client-accounting-position.md`
 
 The timesheet-side tools (`GetTimesheets`, `SearchClients`,
 `GetProjectsForClient`, `GetClientRate`, `GetCrmBookings`, `ListIterations`,

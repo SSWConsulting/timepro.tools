@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using SSW.TimePro.Cli.Infrastructure.Guides;
 using SSW.TimePro.Cli.Infrastructure.Output;
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -30,6 +31,18 @@ public class GuideCommand : Command<GuideCommand.Settings>
                 AnsiConsole.MarkupLine($"- {Markup.Escape(question)}");
 
             AnsiConsole.WriteLine();
+            AnsiConsole.MarkupLine("[bold]Matching guides[/]");
+            if (g.MatchingGuides.Count == 0)
+            {
+                AnsiConsole.MarkupLine("[grey]- No matching guide topics found yet[/]");
+            }
+            else
+            {
+                foreach (var guide in g.MatchingGuides)
+                    AnsiConsole.MarkupLine($"- [cyan]{Markup.Escape(guide.Title)}[/] ({Markup.Escape(guide.MatchType)}): {Markup.Escape(guide.Description)}");
+            }
+
+            AnsiConsole.WriteLine();
             AnsiConsole.MarkupLine("[bold]Useful CLI commands[/]");
             foreach (var command in g.RecommendedCommands)
                 AnsiConsole.MarkupLine($"- [cyan]{Markup.Escape(command)}[/]");
@@ -53,10 +66,49 @@ public sealed record AccountingGuide(
     IReadOnlyList<string> RecommendedCommands,
     IReadOnlyList<string> RecommendedMcpTools,
     IReadOnlyList<string> RecommendedSkills,
+    IReadOnlyList<RankedGuide> MatchingGuides,
     string Note)
 {
-    public static AccountingGuide For(string? useCase = null) =>
-        new(
+    private const string Domain = "accounting";
+
+    private static readonly IReadOnlyList<string> CommonCommands =
+    [
+        "tp invoice get <invoiceId> --json",
+        "tp invoice lines <invoiceId> --json",
+        "tp invoice timesheets <invoiceId> --json",
+        "tp invoice receipts <invoiceId> --json",
+        "tp receipt list --search <clientOrReference> --json",
+        "tp creditnote list --client <clientId> --json",
+        "tp rate list --client <clientId> --show-expired --json",
+        "tp prepaid summary <invoiceId> --json",
+        "tp query --from <yyyy-MM-dd> --to <yyyy-MM-dd> --json"
+    ];
+
+    private static readonly IReadOnlyList<string> CommonSkills =
+    [
+        "timepro-accounting-cli"
+    ];
+
+    private static readonly IReadOnlyList<string> CommonMcpTools =
+    [
+        "ListInvoices",
+        "GetInvoice",
+        "GetInvoiceLines",
+        "GetInvoiceTimesheets",
+        "GetInvoiceReceipts",
+        "ListPaidReceipts",
+        "ListCreditNotes",
+        "ListClientRates",
+        "GetPrepaidStatus",
+        "QueryTimesheets"
+    ];
+
+    public static AccountingGuide For(string? useCase = null)
+    {
+        var matchingGuides = GuideRanking.Rank(useCase, GuideCatalog.Load(Domain));
+        var hasFilteredMatches = !string.IsNullOrWhiteSpace(useCase) && matchingGuides.Count > 0;
+
+        return new(
             UseCase: useCase,
             AskUser:
             [
@@ -67,37 +119,25 @@ public sealed record AccountingGuide(
                 "Should credit notes and write-offs be netted into the total or reported separately?",
                 "What tolerance should be used for amount mismatches?"
             ],
-            RecommendedCommands:
-            [
-                "tp invoice get <invoiceId> --json",
-                "tp invoice lines <invoiceId> --json",
-                "tp invoice timesheets <invoiceId> --json",
-                "tp invoice receipts <invoiceId> --json",
-                "tp receipt list --search <clientOrReference> --json",
-                "tp creditnote list --client <clientId> --json",
-                "tp rate list --client <clientId> --show-expired --json",
-                "tp prepaid summary <invoiceId> --json",
-                "tp query --from <yyyy-MM-dd> --to <yyyy-MM-dd> --json"
-            ],
-            RecommendedMcpTools:
-            [
-                "ListInvoices",
-                "GetInvoice",
-                "GetInvoiceLines",
-                "GetInvoiceTimesheets",
-                "GetInvoiceReceipts",
-                "ListPaidReceipts",
-                "ListCreditNotes",
-                "ListClientRates",
-                "GetPrepaidStatus",
-                "QueryTimesheets"
-            ],
-            RecommendedSkills:
-            [
-                "timepro-accounting-cli",
-                "timepro-accounting-tax-mismatch",
-                "timepro-accounting-invoice-diagnostics",
-                "timepro-accounting-client-diagnostics"
-            ],
-            Note: "The guide is intentionally lightweight and read-only. Use primitive CLI/MCP reads for data, then let the specialized accounting skills compose the evidence pack so local skill updates do not require code changes.");
+            RecommendedCommands: hasFilteredMatches
+                ? Unique(matchingGuides.SelectMany(guide => guide.Commands))
+                : CommonCommands,
+            RecommendedMcpTools: hasFilteredMatches
+                ? SpecificOrFallback(matchingGuides.SelectMany(guide => guide.McpTools), CommonMcpTools)
+                : CommonMcpTools,
+            RecommendedSkills: hasFilteredMatches
+                ? SpecificOrFallback(matchingGuides.SelectMany(guide => guide.Skills), CommonSkills)
+                : CommonSkills,
+            MatchingGuides: matchingGuides,
+            Note: "The guide is intentionally lightweight and read-only. Specific recipes live in guides/accounting so local guide updates do not require app code changes.");
+    }
+
+    private static IReadOnlyList<string> Unique(IEnumerable<string> values) =>
+        values.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+
+    private static IReadOnlyList<string> SpecificOrFallback(IEnumerable<string> values, IReadOnlyList<string> fallback)
+    {
+        var specific = Unique(values);
+        return specific.Count == 0 ? fallback : specific;
+    }
 }

@@ -122,8 +122,8 @@ Use this when checking for timesheet tax drift after invoice allocation.
 tp accounting guide --use-case "0% tax timesheets on taxable invoice" --json
 ```
 
-If the guide matches the investigation, use the `timepro-accounting-tax-mismatch`
-skill. It composes read-only `tp invoice ...` evidence into
+If the guide matches the investigation, use the `guides/accounting/tax-mismatch.md`
+recipe. It composes read-only `tp invoice ...` evidence into
 `/tmp/timepro-tax-mismatch.csv` without requiring a dedicated diagnostic command.
 
 ### Aged debtors for one client
@@ -210,9 +210,9 @@ When another MCP is available, use it for the external side and keep TimePro evi
 Prefer the accounting guide before manually stitching primitives:
 
 - `tp accounting guide --json` asks the right setup questions for Excel, CSV, Xero MCP, bank MCP, or another external source.
-- `timepro-accounting-tax-mismatch` composes invoice and allocated-timesheet evidence for 0% tax drift checks.
-- `timepro-accounting-invoice-diagnostics` assembles an invoice evidence pack from header, lines, allocated/write-off timesheets, receipts, and credit notes.
-- `timepro-accounting-client-diagnostics` assembles client-level invoice, debt, unbilled, credit note, rate, and external comparison evidence.
+- `guides/accounting/tax-mismatch.md` composes invoice and allocated-timesheet evidence for 0% tax drift checks.
+- `guides/accounting/invoice-evidence-pack.md` assembles an invoice evidence pack from header, lines, allocated/write-off timesheets, receipts, and credit notes.
+- `guides/accounting/client-accounting-position.md` assembles client-level invoice, debt, unbilled, credit note, rate, and external comparison evidence.
 
 If using `tp mcp` with accounting enabled, MCP exposes primitive read-only tools.
 Use skills or guide-backed markdown to compose multi-step diagnostics locally.

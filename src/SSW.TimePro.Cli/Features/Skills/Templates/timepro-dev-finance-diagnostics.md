@@ -51,8 +51,8 @@ Bug-focused checks:
 For a deeper read-only evidence pack, use the guide-backed accounting skills:
 
 ```bash
-# Use timepro-accounting-tax-mismatch for the tax scan.
-# Use timepro-accounting-invoice-diagnostics for one invoice evidence pack.
+# Use guides/accounting/tax-mismatch.md for the tax scan.
+# Use guides/accounting/invoice-evidence-pack.md for one invoice evidence pack.
 ```
 
 ## Client rate and billing status bugs

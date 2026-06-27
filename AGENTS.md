@@ -134,6 +134,14 @@ Use these placeholders instead:
 
 This rule applies to anything under version control, anything emitted by `tp skills create`, and anything in example output blocks. When updating docs, grep the working tree for anything that looks like a real customer name, a real-world repo slug, or internal-only project codes before committing. If in doubt, replace with a Northwind variant.
 
+## Diagnostic Guides
+
+Adding new guide-backed diagnostics is welcomed. See
+[`docs/diagnostic-guides.md`](docs/diagnostic-guides.md) for how to add
+accounting and developer guide indexes, Markdown recipes, ranking
+keywords, and tests. Use the repo skill `timepro-guide-curator` for guide
+curation work.
+
 ## Build & Run
 
 ```bash
