@@ -11,11 +11,18 @@ public class SemanticVersionTests
     [InlineData("v0.2.7", 0, 2, 7)]
     [InlineData("0.2", 0, 2, 0)]
     [InlineData("0.2.7+abc123", 0, 2, 7)]
+    [InlineData("0.2.7.0", 0, 2, 7)]
     public void TryParse_ParsesExpectedShapes(string input, int major, int minor, int patch)
     {
         SemanticVersion.TryParse(input, out var version).Should().BeTrue();
         version.Should().Be(new SemanticVersion(major, minor, patch));
     }
+
+    [Theory]
+    [InlineData("0.2.7.foo")]
+    [InlineData("0.2.7.1")]
+    public void TryParse_RejectsUnsupportedRevisionShapes(string input) =>
+        SemanticVersion.TryParse(input, out _).Should().BeFalse();
 
     [Fact]
     public void CompareTo_OrdersByMajorMinorPatch()

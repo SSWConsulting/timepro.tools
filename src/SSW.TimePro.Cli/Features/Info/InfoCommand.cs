@@ -49,6 +49,8 @@ public class InfoCommand : AsyncCommand<InfoCommand.Settings>
             updateCheck = await UpdateCheckService.CheckLatestReleaseAsync(cancellationToken);
             if (AppMetadataCommandLine.RecordUpdateCheck(_config, updateCheck))
                 global = _config.LoadGlobalConfig();
+
+            updateCheck = UpdateCheckService.UseCachedVersionOnError(updateCheck, global.Version);
         }
 
         var summary = new CliInfoSummary(
@@ -165,8 +167,11 @@ public class InfoCommand : AsyncCommand<InfoCommand.Settings>
         if (!string.IsNullOrWhiteSpace(info.Update.ReleaseUrl) && (detailed || info.Update.UpdateAvailable))
             table.AddRow("[bold]Release notes[/]", Markup.Escape(info.Update.ReleaseUrl));
 
-        if (!string.IsNullOrWhiteSpace(info.Update.ErrorMessage))
+        if (!string.IsNullOrWhiteSpace(info.Update.ErrorMessage)
+            && (detailed || info.Update.Status == "error"))
+        {
             table.AddRow("[bold]Update check error[/]", Markup.Escape(info.Update.ErrorMessage));
+        }
 
         AnsiConsole.Write(table);
 

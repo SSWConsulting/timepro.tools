@@ -29,6 +29,10 @@ public readonly record struct SemanticVersion(int Major, int Minor, int Patch)
         if (parts.Length >= 3 && !int.TryParse(parts[2], out patch))
             return false;
 
+        if (parts.Length == 4
+            && (!int.TryParse(parts[3], out var revision) || revision != 0))
+            return false;
+
         version = new SemanticVersion(major, minor, patch);
         return true;
     }

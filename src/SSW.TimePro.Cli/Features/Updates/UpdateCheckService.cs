@@ -1,3 +1,4 @@
+using SSW.TimePro.Cli.Infrastructure.Config;
 using SSW.TimePro.Cli.Infrastructure;
 using System.Text.Json;
 
@@ -25,6 +26,8 @@ public sealed record UpdateCheckResult(
 
 public static class UpdateCheckService
 {
+    private static readonly HttpClient GitHubHttpClient = new();
+
     public static async Task<UpdateCheckResult> CheckLatestReleaseAsync(CancellationToken cancellationToken)
     {
         var currentVersion = BuildInfo.Version;
@@ -43,8 +46,7 @@ public static class UpdateCheckService
         var checkedAt = DateTimeOffset.UtcNow;
         try
         {
-            using var http = new HttpClient();
-            latest = await new GitHubReleaseClient(http).GetLatestReleaseAsync(cancellationToken);
+            latest = await new GitHubReleaseClient(GitHubHttpClient).GetLatestReleaseAsync(cancellationToken);
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException)
         {
@@ -78,5 +80,28 @@ public static class UpdateCheckService
                 ? UpdateCheckStatus.UpToDate
                 : UpdateCheckStatus.UpdateAvailable,
             ErrorMessage: null);
+    }
+
+    public static UpdateCheckResult UseCachedVersionOnError(
+        UpdateCheckResult result,
+        InstalledVersionConfig versionState)
+    {
+        if (result.Status != UpdateCheckStatus.Error
+            || string.IsNullOrWhiteSpace(versionState.LastUpdateCheckedVersion)
+            || !SemanticVersion.TryParse(result.CurrentVersion, out var current)
+            || !SemanticVersion.TryParse(versionState.LastUpdateCheckedVersion, out var cachedLatest))
+        {
+            return result;
+        }
+
+        return result with
+        {
+            LatestVersion = versionState.LastUpdateCheckedVersion,
+            ReleaseUrl = GitHubReleaseClient.ReleaseUrlFor(versionState.LastUpdateCheckedVersion),
+            CheckedAt = versionState.LastUpdateCheckedAt,
+            Status = current.CompareTo(cachedLatest) >= 0
+                ? UpdateCheckStatus.UpToDate
+                : UpdateCheckStatus.UpdateAvailable
+        };
     }
 }

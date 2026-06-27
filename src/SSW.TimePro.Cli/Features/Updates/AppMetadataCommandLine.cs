@@ -31,7 +31,7 @@ public static class AppMetadataCommandLine
 
         if (checkUpdate == whatsNew)
         {
-            OutputHelper.WriteError("Use exactly one of --check-update or --whats-new.");
+            OutputHelper.WriteError("Use exactly one of --check-update/--check-version or --whats-new.");
             return 1;
         }
 
@@ -69,6 +69,7 @@ public static class AppMetadataCommandLine
     {
         var result = await UpdateCheckService.CheckLatestReleaseAsync(cancellationToken);
         RecordUpdateCheck(configService, result);
+        result = UpdateCheckService.UseCachedVersionOnError(result, LoadVersionState(configService));
 
         Console.WriteLine($"Current version: {result.CurrentVersion}");
         if (result.Status == UpdateCheckStatus.DevelopmentBuild)
@@ -81,6 +82,12 @@ public static class AppMetadataCommandLine
         {
             OutputHelper.WriteError($"Could not check GitHub Releases: {result.ErrorMessage}");
             return 1;
+        }
+
+        if (!string.IsNullOrWhiteSpace(result.ErrorMessage))
+        {
+            OutputHelper.WriteWarning($"Could not refresh GitHub Releases: {result.ErrorMessage}");
+            OutputHelper.WriteWarning("Using the last successfully checked version.");
         }
 
         Console.WriteLine($"Latest version: {result.LatestVersion}");
