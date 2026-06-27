@@ -25,6 +25,9 @@ public class ConfigServiceTests : IDisposable
         config.ActiveTenant.Should().BeNull();
         config.WfhDays.Should().BeEmpty();
         config.DefaultLocation.Should().Be("Office");
+        config.Guides.CacheMinutes.Should().Be(5);
+        config.Guides.RepositoryUrl.Should().Be(GuideConfig.DefaultRepositoryUrl);
+        config.Guides.Branch.Should().Be(GuideConfig.DefaultBranch);
     }
 
     [Fact]
@@ -35,6 +38,12 @@ public class ConfigServiceTests : IDisposable
             ActiveTenant = "ssw",
             WfhDays = ["Monday", "Tuesday"],
             DefaultLocation = "Home",
+            Guides = new GuideConfig
+            {
+                CacheMinutes = 15,
+                RepositoryUrl = "https://github.com/Northwind/TimePro.Tools",
+                Branch = "feature/guides"
+            },
             Features =
             {
                 [FeatureCatalog.Accounting] = new FeatureConfig { Enabled = true, Version = 1 }
@@ -58,6 +67,9 @@ public class ConfigServiceTests : IDisposable
         loaded.ActiveTenant.Should().Be("ssw");
         loaded.WfhDays.Should().BeEquivalentTo(["Monday", "Tuesday"]);
         loaded.DefaultLocation.Should().Be("Home");
+        loaded.Guides.CacheMinutes.Should().Be(15);
+        loaded.Guides.RepositoryUrl.Should().Be("https://github.com/Northwind/TimePro.Tools");
+        loaded.Guides.Branch.Should().Be("feature/guides");
         loaded.IsFeatureEnabled(FeatureCatalog.Accounting).Should().BeTrue();
         loaded.Features[FeatureCatalog.Accounting].Version.Should().Be(1);
         loaded.Skills["timepro-timesheets"].Version.Should().Be(1);

@@ -155,8 +155,8 @@ tp ts get 2026-03-12       # Specific date
 | `tp blog list` | Latest blog posts (`--mine`, `--limit N`, `--all`) |
 | `tp mcp` | Start MCP server (stdio); `--tenant NAME` binds the session to a specific tenant config without changing the global active tenant |
 | **Accountant (read-only)** | See [`docs/accounting.md`](docs/accounting.md) |
-| `tp accounting guide` | Accounting AI guide for choosing read-only evidence packs and specialized skills |
-| `tp dev guide` | Developer AI guide for choosing bug reproduction and verification evidence |
+| `tp accounting guide [--refresh]` | Accounting AI guide for choosing read-only evidence packs and specialized skills |
+| `tp dev guide [--refresh]` | Developer AI guide for choosing bug reproduction and verification evidence |
 | `tp invoice list / get / lines / timesheets / receipts` | Invoices |
 | `tp receipt list / get / outstanding` | Receipts + aged debtors |
 | `tp creditnote list --client ID` | Credit notes |
@@ -364,11 +364,32 @@ New guide-backed diagnostics are welcomed. See
 accounting or developer guide indexes, Markdown recipes, ranking
 keywords, and tests.
 
+Guides are downloaded from GitHub into
+`~/.config/timepro-cli/guides-cache/` and reused while the cache is fresh. The
+default cache time is 5 minutes and can be changed in
+`~/.config/timepro-cli/config.json`:
+
+```json
+{
+  "guides": {
+    "cacheMinutes": 5,
+    "repositoryUrl": "https://github.com/SSWConsulting/TimePro.Tools",
+    "branch": "main"
+  }
+}
+```
+
+Without `--refresh`, `tp` still checks GitHub when the cache is missing or older
+than `cacheMinutes`. Use `--refresh` when you want to bypass the cache for one
+run. For local branch testing, set `guides.branch` to your branch name, such as
+`codex/dev-skill-templates`. Embedded guides remain as an offline fallback.
+
 Use guide search when the workflow is specific enough that a Markdown recipe is
 better than a new command:
 
 ```bash
 tp accounting guide --use-case "50k revenue" --json
+tp accounting guide --use-case "50k revenue" --refresh --json
 tp accounting guide --use-case "monthly sales receipts" --json
 tp dev guide --use-case "suggested timesheets missing" --json
 tp dev guide --use-case "appinsights exception correlation" --json

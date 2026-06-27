@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using SSW.TimePro.Cli.Infrastructure.Config;
 using SSW.TimePro.Cli.Infrastructure.Guides;
 using SSW.TimePro.Cli.Infrastructure.Output;
 using Spectre.Console;
@@ -7,22 +8,46 @@ using Spectre.Console.Cli;
 namespace SSW.TimePro.Cli.Features.Developer;
 
 [Description("Show developer diagnostic guide questions and command choices")]
-public class GuideCommand : Command<GuideCommand.Settings>
+public class GuideCommand : AsyncCommand<GuideCommand.Settings>
 {
+    private const string Domain = "dev";
+    private readonly IConfigService _config;
+
+    public GuideCommand(IConfigService config)
+    {
+        _config = config;
+    }
+
     public class Settings : CommandSettings
     {
         [CommandOption("--use-case <TEXT>")]
         [Description("Optional short user goal, e.g. 'suggested timesheets missing in staging'")]
         public string? UseCase { get; set; }
 
+        [CommandOption("--refresh|--force-refresh")]
+        [Description("Force refresh the GitHub guide cache before reading")]
+        public bool Refresh { get; set; }
+
         [CommandOption("--json")]
         [Description("Output as JSON")]
         public bool Json { get; set; }
     }
 
-    protected override int Execute(CommandContext context, Settings settings, CancellationToken cancellationToken)
+    protected override async Task<int> ExecuteAsync(CommandContext context, Settings settings, CancellationToken cancellationToken)
     {
-        var guide = DeveloperGuide.For(settings.UseCase);
+        var guideConfig = _config.LoadGlobalConfig().Guides ?? new GuideConfig();
+        var cacheMinutes = Math.Max(0, guideConfig.CacheMinutes);
+        var guides = await GuideCatalog.LoadFromGitHubCacheAsync(
+            Domain,
+            new GuideCatalogOptions(
+                _config.ConfigDirectory,
+                TimeSpan.FromMinutes(cacheMinutes),
+                settings.Refresh,
+                guideConfig.RepositoryUrl,
+                guideConfig.Branch,
+                null),
+            cancellationToken);
+        var guide = DeveloperGuide.For(settings.UseCase, guides);
 
         OutputHelper.Render(guide, settings.Json, g =>
         {
@@ -96,9 +121,11 @@ public sealed record DeveloperGuide(
         "timepro-env-compare"
     ];
 
-    public static DeveloperGuide For(string? useCase = null)
+    public static DeveloperGuide For(
+        string? useCase = null,
+        IReadOnlyList<GuideDocument>? guides = null)
     {
-        var matchingGuides = GuideRanking.Rank(useCase, GuideCatalog.Load(Domain));
+        var matchingGuides = GuideRanking.Rank(useCase, guides ?? GuideCatalog.Load(Domain));
         var hasFilteredMatches = !string.IsNullOrWhiteSpace(useCase) && matchingGuides.Count > 0;
 
         return new(

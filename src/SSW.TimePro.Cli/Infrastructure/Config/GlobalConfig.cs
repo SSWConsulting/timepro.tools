@@ -41,6 +41,12 @@ public class GlobalConfig
     /// </summary>
     [JsonPropertyName("scrum")]
     public ScrumConfig Scrum { get; set; } = new();
+
+    /// <summary>
+    /// Settings used by <c>tp accounting guide</c> and <c>tp dev guide</c>.
+    /// </summary>
+    [JsonPropertyName("guides")]
+    public GuideConfig Guides { get; set; } = new();
 }
 
 public class FeatureConfig
@@ -90,6 +96,31 @@ public class InstalledVersionConfig
 
     [JsonPropertyName("lastUpdateCheckedVersion")]
     public string? LastUpdateCheckedVersion { get; set; }
+}
+
+public class GuideConfig
+{
+    public const string DefaultRepositoryUrl = "https://github.com/SSWConsulting/TimePro.Tools";
+    public const string DefaultBranch = "main";
+
+    /// <summary>
+    /// How long GitHub-downloaded diagnostic guides stay fresh in the local
+    /// cache. Set to 0 to refresh on every guide command.
+    /// </summary>
+    [JsonPropertyName("cacheMinutes")]
+    public int CacheMinutes { get; set; } = 5;
+
+    /// <summary>
+    /// GitHub repository that hosts the <c>guides/</c> folder.
+    /// </summary>
+    [JsonPropertyName("repositoryUrl")]
+    public string RepositoryUrl { get; set; } = DefaultRepositoryUrl;
+
+    /// <summary>
+    /// Branch or ref used when downloading guide content.
+    /// </summary>
+    [JsonPropertyName("branch")]
+    public string Branch { get; set; } = DefaultBranch;
 }
 
 /// <summary>
