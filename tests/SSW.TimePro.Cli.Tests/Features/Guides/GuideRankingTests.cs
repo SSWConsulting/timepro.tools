@@ -42,6 +42,23 @@ public class GuideRankingTests
         guide.MatchingGuides.Should().OnlyContain(match => match.MatchRank == 1);
     }
 
+    [Theory]
+    [InlineData("empid", "Employee scoped diagnostics")]
+    [InlineData("timezone", "Leave profile field issue")]
+    [InlineData("remaining credit", "Prepaid invoice state bug")]
+    [InlineData("appinsights", "AppInsights exception correlation")]
+    public void DeveloperGuide_FindsRecentDiagnosticPatterns(string useCase, string expectedTitle)
+    {
+        var guide = DeveloperGuide.For(useCase);
+
+        guide.MatchingGuides.Should().ContainSingle(match => match.Title == expectedTitle);
+        guide.MatchingGuides.Should().OnlyContain(match => match.MatchRank == 3);
+        guide.RecommendedCommands.Should().NotBeEmpty();
+        guide.RecommendedCommands.Should().OnlyContain(command =>
+            command.StartsWith("tp ", StringComparison.Ordinal)
+            || command.StartsWith("az monitor app-insights query", StringComparison.Ordinal));
+    }
+
     [Fact]
     public void AccountingGuide_FiltersInvoiceReconciliationAsExactKeywordMatch()
     {
@@ -87,5 +104,37 @@ public class GuideRankingTests
             && guide.Title == "Suggested timesheets missing"
             && guide.Commands.Any(command => command.Contains("tp ts suggest", StringComparison.Ordinal))
             && guide.Skills.Contains("timepro-dev-timesheet-diagnostics"));
+    }
+
+    [Fact]
+    public void DeveloperGuides_DoNotContainRecentPrivateIncidentBreadcrumbs()
+    {
+        var forbidden = new[]
+        {
+            "Azure DevOps",
+            "SSW.TimeProDotNet",
+            "ssw2",
+            "60456",
+            "60470",
+            "Jeoffrey",
+            "Jernej",
+            "Penny"
+        };
+
+        var guides = GuideCatalog.Load("dev");
+        var searchableText = string.Join(
+            "\n",
+            guides.Select(guide => string.Join(
+                "\n",
+                [
+                    guide.Title,
+                    guide.Description,
+                    guide.Body,
+                    .. guide.Keywords,
+                    .. guide.Commands
+                ])));
+
+        foreach (var term in forbidden)
+            searchableText.Should().NotContain(term, because: "developer guides must stay public and sanitized");
     }
 }

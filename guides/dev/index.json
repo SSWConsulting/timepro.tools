@@ -46,6 +46,39 @@
       "skills": ["timepro-dev-timesheet-diagnostics"]
     },
     {
+      "slug": "employee-scoped-diagnostics",
+      "file": "employee-scoped-diagnostics.md",
+      "title": "Employee scoped diagnostics",
+      "description": "Resolve an employee identity and compare user detail, saved timesheets, leave, and query output for the same date window.",
+      "keywords": ["employee", "empid", "emp id", "user", "profile", "employee scoped", "date window"],
+      "commands": [
+        "tp dev guide --use-case \"employee scoped diagnostics\" --json",
+        "tp user list <nameOrEmail> --tenant <name> --env <env> --json",
+        "tp user get <empId> --tenant <name> --env <env> --json",
+        "tp ts get --from <yyyy-MM-dd> --to <yyyy-MM-dd> --tenant <name> --env <env> --emp-id <empId> --json",
+        "tp leave list --filter UPCOMING --tenant <name> --env <env> --emp-id <empId> --json",
+        "tp leave list --filter PAST --tenant <name> --env <env> --emp-id <empId> --json",
+        "tp query --from <yyyy-MM-dd> --to <yyyy-MM-dd> --tenant <name> --env <env> --emp-id <empId> --json"
+      ],
+      "skills": ["timepro-dev-timesheet-diagnostics", "timepro-env-compare"]
+    },
+    {
+      "slug": "leave-profile-field-issue",
+      "file": "leave-profile-field-issue.md",
+      "title": "Leave profile field issue",
+      "description": "Diagnose leave or coverage failures caused by missing employee profile fields such as timezone, site, work hours, or time-less settings.",
+      "keywords": ["leave", "easyleave", "timezone", "profile field", "null timezone", "coverage", "time-less"],
+      "commands": [
+        "tp dev guide --use-case \"leave profile field issue\" --json",
+        "tp user get <empId> --tenant <name> --env <env> --json",
+        "tp leave list --filter UPCOMING --tenant <name> --env <env> --emp-id <empId> --json",
+        "tp leave list --filter PAST --tenant <name> --env <env> --emp-id <empId> --json",
+        "tp ts check --week 0 --tenant <name> --env <env> --emp-id <empId> --json",
+        "tp ts get <date> --tenant <name> --env <env> --emp-id <empId> --json"
+      ],
+      "skills": ["timepro-dev-timesheet-diagnostics", "timepro-env-compare"]
+    },
+    {
       "slug": "invoice-tax-bug",
       "file": "invoice-tax-bug.md",
       "title": "Invoice tax bug",
@@ -56,6 +89,23 @@
         "tp accounting guide --use-case \"0% tax timesheets on taxable invoice\" --json",
         "tp invoice get <invoiceId> --tenant <name> --env <env> --json",
         "tp invoice timesheets <invoiceId> --tenant <name> --env <env> --json"
+      ],
+      "skills": ["timepro-dev-finance-diagnostics", "timepro-accounting-cli"]
+    },
+    {
+      "slug": "prepaid-invoice-state-bug",
+      "file": "prepaid-invoice-state-bug.md",
+      "title": "Prepaid invoice state bug",
+      "description": "Gather invoice, allocated timesheet, write-off, prepaid drawdown, and related date-window evidence for prepaid state bugs.",
+      "keywords": ["prepaid", "drawdown", "invoice state", "remaining credit", "writeoff", "allocated timesheets"],
+      "commands": [
+        "tp dev guide --use-case \"prepaid invoice state bug\" --json",
+        "tp invoice get <invoiceId> --tenant <name> --env <env> --json",
+        "tp invoice lines <invoiceId> --tenant <name> --env <env> --json",
+        "tp invoice timesheets <invoiceId> --tenant <name> --env <env> --json",
+        "tp invoice timesheets <invoiceId> --tenant <name> --env <env> --writeoff --json",
+        "tp prepaid summary <invoiceId> --tenant <name> --env <env> --json",
+        "tp query --from <yyyy-MM-dd> --to <yyyy-MM-dd> --tenant <name> --env <env> --client <clientId> --json"
       ],
       "skills": ["timepro-dev-finance-diagnostics", "timepro-accounting-cli"]
     },
@@ -72,6 +122,22 @@
         "tp unbilled list --client <clientId> --tenant <name> --env <env> --json"
       ],
       "skills": ["timepro-dev-finance-diagnostics", "timepro-accounting-cli"]
+    },
+    {
+      "slug": "appinsights-exception-correlation",
+      "file": "appinsights-exception-correlation.md",
+      "title": "AppInsights exception correlation",
+      "description": "Correlate a TimePro CLI-reproduced employee, date, invoice, or reference with recent Application Insights requests, traces, and exceptions.",
+      "keywords": ["appinsights", "application insights", "telemetry", "exception", "500", "trace", "correlation"],
+      "commands": [
+        "tp dev guide --use-case \"appinsights exception correlation\" --json",
+        "tp tenant info --tenant <name> --env <env> --json",
+        "tp ts get <date> --tenant <name> --env <env> --emp-id <empId> --json",
+        "tp invoice get <invoiceId> --tenant <name> --env <env> --json",
+        "az monitor app-insights query --app \"<appId>\" --analytics-query \"requests | where timestamp > ago(24h) | where tostring(customDimensions) has '<reference>' | project timestamp, name, resultCode, success, operation_Id | order by timestamp desc | take 50\"",
+        "az monitor app-insights query --app \"<appId>\" --analytics-query \"exceptions | where timestamp > ago(24h) | where tostring(customDimensions) has '<reference>' or outerMessage has '<reference>' | project timestamp, type, outerMessage, operation_Id | order by timestamp desc | take 50\""
+      ],
+      "skills": ["timepro-dev-diagnostics", "timepro-dev-timesheet-diagnostics", "timepro-dev-finance-diagnostics"]
     },
     {
       "slug": "external-sync-bug",
