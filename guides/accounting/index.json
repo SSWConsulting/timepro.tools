@@ -119,7 +119,7 @@
         "tp invoice timesheets <invoiceId> --writeoff --json",
         "tp creditnote list --client <clientId> --json"
       ],
-      "mcpTools": ["GetInvoiceTimesheets", "ListCreditNotes"],
+      "mcpTools": ["GetPrepaidStatus", "GetInvoiceTimesheets", "ListCreditNotes"],
       "skills": ["timepro-accounting-cli"]
     },
     {
@@ -133,7 +133,7 @@
         "tp creditnote list --client <clientId> --json",
         "tp prepaid summary <invoiceId> --json"
       ],
-      "mcpTools": ["ListCreditNotes"],
+      "mcpTools": ["ListCreditNotes", "GetPrepaidStatus"],
       "skills": ["timepro-accounting-cli"]
     },
     {
@@ -164,7 +164,7 @@
         "tp recurring get <recurringId> --json",
         "tp invoice list --query <clientId> --recurring --json"
       ],
-      "mcpTools": ["ListInvoices"],
+      "mcpTools": ["ListRecurringInvoices", "GetRecurringInvoice", "ListInvoices"],
       "skills": ["timepro-accounting-cli"]
     }
   ]
